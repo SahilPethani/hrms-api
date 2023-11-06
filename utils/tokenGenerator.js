@@ -18,7 +18,7 @@ function verifyToken(token) {
     const decoded = jwt.verify(token, secret_key);
     return decoded;
   } catch (error) {
-    return null; // Token verification failed
+    throw new Error("Token verification failed");
   }
 }
 

@@ -1,19 +1,19 @@
-const express = require("express")
+const express = require("express");
 
 const {
     authenticateUser,
     authorizePermission
-} = require('../middleware/auth')
-const { loginUser, registerUser } = require("../controller/userCOntroller")
+} = require('../middleware/auth');
+const { loginUser, registerUser } = require("../controller/userController"); // Fix the case
 
-const router = express.Router()
+const router = express.Router();
 
 router
     .route("/auth/register")
-    .post(registerUser)
+    .post(registerUser);
 
 router
     .route("/auth/login")
-    .post(loginUser)
+    .post(loginUser);
 
-module.exports = router
+module.exports = router;
