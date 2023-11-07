@@ -21,14 +21,20 @@
 const express = require('express')
 var cors = require('cors')
 const errorMiddleware = require("./errors/error.js")
+const mongoose = require("mongoose")
+mongoose.set('strictQuery', true);
 const app = express()
 
-const connectDatabase = require('./db.js')
+mongoose.connect("mongodb+srv://node-shop:node-shop@node-rest-shop.seyvw5c.mongodb.net/HRMS-codeline-api?retryWrites=true&w=majority").then(() => {
+    console.log("Connection is Successful")
+}).catch((err) => console.log(`Somthing wont wrong`))
+
+// const connectDatabase = require('./db.js')
 
 app.use(express.json())
 app.use(cors())
 
-connectDatabase()
+// connectDatabase()
 
 const PORT = process.env.PORT || 4000
 app.listen(PORT, () => {
