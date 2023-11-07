@@ -19,16 +19,13 @@
 
 
 const express = require('express')
-const bodyParser = require('body-parser');
 var cors = require('cors')
 const errorMiddleware = require("./errors/error.js")
 const app = express()
 
-const connectDatabase = require('./db')
+const connectDatabase = require('./db.js')
 
 app.use(express.json())
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors())
 
 connectDatabase()
