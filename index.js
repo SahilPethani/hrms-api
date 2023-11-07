@@ -40,7 +40,7 @@ app.listen(PORT, () => {
     console.log(`API listening on PORT ${PORT} `)
 })
 
-const userRoutes = require('./routes/userroutes.js');
+const userRoutes = require('./routes/userroutes');
 app.use('/api/v1', userRoutes);
 
 app.get('/', (req, res) => {
