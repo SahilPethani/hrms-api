@@ -18,7 +18,7 @@ const mongoose = require("mongoose")
 mongoose.set('strictQuery', true);
 
 const connectDatabase = () => {
-    mongoose.connect(process.env.DB_URI).then(() => {
+    mongoose.connect("mongodb+srv://node-shop:node-shop@node-rest-shop.seyvw5c.mongodb.net/HRMS-codeline-api?retryWrites=true&w=majority").then(() => {
         console.log("Connection is Successful")
     }).catch((err) => console.log(`Somthing wont wrong`))
 }
