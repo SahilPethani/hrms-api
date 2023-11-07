@@ -19,16 +19,46 @@
 
 
 const express = require('express')
+const bodyParser = require('body-parser');
+var cors = require('cors')
+const errorMiddleware = require("./errors/error.js")
+const path = require('path');
 const app = express()
-const PORT = 4000
+
+const dotenv = require('dotenv')
+const connectDatabase = require('./db')
+dotenv.config({ path: "config/config.env" })
+
+app.use(express.json())
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cors())
+
+connectDatabase()
+
+const PORT = process.env.PORT || 4000
 app.listen(PORT, () => {
-console.log(`API listening on PORT ${PORT} `)
+    console.log(`API listening on PORT ${PORT} `)
 })
+
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+
+const userRoutes = require('./routes/userroutes.js');
+app.use('/api/v1', userRoutes);
+
 app.get('/', (req, res) => {
-res.send('Hey this is my API running 🥳')
-})
-app.get('/about', (req, res) => {
-res.send('This is my about route..... ')
-})
+    res.sendFile(path.join(__dirname, 'html', 'index.html'));
+  });
+
+// app.get('/', (req, res) => {
+//     res.send('Hey this is my API running 🥳')
+// })
+// app.get('/about', (req, res) => {
+//     res.send('This is my about route..... ')
+// })
+app.use(errorMiddleware);
+
 // Export the Express API
 module.exports = app
