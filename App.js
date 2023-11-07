@@ -17,8 +17,8 @@ app.use(cors())
 // app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
-const userRoutes = require('./routes/userroutes.js');
-app.use('/api/v1', userRoutes);
+// const userRoutes = require('./routes/userroutes.js');
+// app.use('/api/v1', userRoutes);
 
 // app.get('/', (req, res) => {
 //     res.sendFile(path.join(__dirname, 'html', 'index.html'));
