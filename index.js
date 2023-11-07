@@ -20,7 +20,6 @@
 
 const express = require('express')
 var cors = require('cors')
-const errorMiddleware = require("./errors/error.js")
 const mongoose = require("mongoose")
 mongoose.set('strictQuery', true);
 const app = express()
@@ -50,7 +49,6 @@ app.get('/', (req, res) => {
 // app.get('/about', (req, res) => {
 //     res.send('This is my about route..... ')
 // })
-app.use(errorMiddleware);
 
 // Export the Express API
 module.exports = app
