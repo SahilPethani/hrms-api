@@ -19,19 +19,19 @@
 
 
 const express = require('express')
-var cors = require('cors')
-const mongoose = require("mongoose")
-mongoose.set('strictQuery', true);
+// var cors = require('cors')
+// const mongoose = require("mongoose")
+// mongoose.set('strictQuery', true);
 const app = express()
 
-mongoose.connect("mongodb+srv://node-shop:node-shop@node-rest-shop.seyvw5c.mongodb.net/HRMS-codeline-api?retryWrites=true&w=majority").then(() => {
-    console.log("Connection is Successful")
-}).catch((err) => console.log(`Somthing wont wrong`))
+// mongoose.connect("mongodb+srv://node-shop:node-shop@node-rest-shop.seyvw5c.mongodb.net/HRMS-codeline-api?retryWrites=true&w=majority").then(() => {
+//     console.log("Connection is Successful")
+// }).catch((err) => console.log(`Somthing wont wrong`))
 
 // const connectDatabase = require('./db.js')
 
 app.use(express.json())
-app.use(cors())
+// app.use(cors())
 
 // connectDatabase()
 
