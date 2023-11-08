@@ -9,7 +9,8 @@ const authenticateUser = async (req, res, next) => {
   }
 
   const bearer = authorizationHeader.split(" ");
-  const token = bearer[1];
+  // const token = bearer[1];
+  const token = req.headers.authorization.split(' ')[0];
 
   try {
     const { username, userId, role } = verifyToken(token);
