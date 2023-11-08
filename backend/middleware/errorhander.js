@@ -1,15 +1,25 @@
-class ErrorHandler extends Error {
-    /**
-     * Create a custom error object.
-     * @param {string} message - The error message.
-     * @param {number} statusCode - The HTTP status code to associate with the error.
-     */
-    constructor(message, statusCode) {
+class ErrorHander extends Error {
+  constructor(message, statusCode) {
       super(message);
-      this.statusCode = statusCode;
-      Error.captureStackTrace(this, this.constructor);
-    }
+      this.statusCode = statusCode
+      Error.captureStackTrace(this, this.constructor)
   }
+}
+
+module.exports = ErrorHander
+
+// class ErrorHandler extends Error {
+//     /**
+//      * Create a custom error object.
+//      * @param {string} message - The error message.
+//      * @param {number} statusCode - The HTTP status code to associate with the error.
+//      */
+//     constructor(message, statusCode) {
+//       super(message);
+//       this.statusCode = statusCode;
+//       Error.captureStackTrace(this, this.constructor);
+//     }
+//   }
   
-  module.exports = ErrorHandler;
+//   module.exports = ErrorHandler;
   
