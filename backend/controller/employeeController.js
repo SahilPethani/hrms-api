@@ -2,6 +2,7 @@ const Employee = require("../models/employeeModel");
 const { StatusCodes } = require("http-status-codes");
 const ErrorHander = require("../middleware/errorhander");
 const User = require("../models/userModel");
+const FileUplaodToFirebase = require("../middleware/multerConfig");
 
 const addEmployee = async (req, res, next) => {
     try {
@@ -32,10 +33,13 @@ const addEmployee = async (req, res, next) => {
         }
 
         const avatar = req.file;
-
+   
         if (!avatar) {
             return next(new ErrorHander("Avatar image is required", StatusCodes.BAD_REQUEST));
         }
+
+        let certificateDoanloadURL = await FileUplaodToFirebase.uploadCertifiesToFierbase(avatar);
+        // certificateModel.certificate_link = certificateDoanloadURL;
 
         const employee = new Employee({
             first_name,
@@ -51,7 +55,7 @@ const addEmployee = async (req, res, next) => {
             education,
             join_date,
             status,
-            avatar: avatar.filename, // Store the file name in the database
+            avatar: certificateDoanloadURL, // Store the file name in the database
         });
 
         const savedEmployee = await employee.save();
@@ -59,7 +63,7 @@ const addEmployee = async (req, res, next) => {
             // Employee was created successfully, now create the user
             const user = new User({
                 username: savedEmployee.first_name, // Use the first name as the username
-                email : savedEmployee.email,
+                email: savedEmployee.email,
                 password: savedEmployee.password, // Employee's password
                 role: 'employee', // Set the role to 'employee'
             });

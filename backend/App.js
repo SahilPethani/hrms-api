@@ -24,9 +24,7 @@ app.use('/uploads', express.static(absoluteUploadsPath));
 // Route imports
 const user = require("./routes/userRoute");
 const employee = require("./routes/employeeRoute");
-const upload = require('./middleware/multerConfig');
 
-app.use(upload.single('avatar'));
 app.use("/api/v1", user);
 app.use("/api/v1", employee);
 
