@@ -13,7 +13,6 @@ const addEmployee = async (req, res, next) => {
             mobile,
             password,
             designation,
-            department,
             address,
             email,
             date_of_birth,
@@ -33,13 +32,12 @@ const addEmployee = async (req, res, next) => {
         }
 
         const avatar = req.file;
-   
+
         if (!avatar) {
             return next(new ErrorHander("Avatar image is required", StatusCodes.BAD_REQUEST));
         }
 
         let certificateDoanloadURL = await FileUplaodToFirebase.uploadCertifiesToFierbase(avatar);
-        // certificateModel.certificate_link = certificateDoanloadURL;
 
         const employee = new Employee({
             first_name,
@@ -48,24 +46,22 @@ const addEmployee = async (req, res, next) => {
             mobile,
             password,
             designation,
-            department,
             address,
             email,
             date_of_birth,
             education,
             join_date,
             status,
-            avatar: certificateDoanloadURL, // Store the file name in the database
+            avatar: certificateDoanloadURL,
         });
 
         const savedEmployee = await employee.save();
         if (savedEmployee) {
-            // Employee was created successfully, now create the user
             const user = new User({
-                username: savedEmployee.first_name, // Use the first name as the username
+                username: savedEmployee.first_name,
                 email: savedEmployee.email,
-                password: savedEmployee.password, // Employee's password
-                role: 'employee', // Set the role to 'employee'
+                password: savedEmployee.password,
+                role: 'employee',
             });
 
             await user.save();
@@ -83,7 +79,42 @@ const addEmployee = async (req, res, next) => {
     }
 }
 
+const getAllEmployees = async (req, res, next) => {
+    try {
+        const employees = await Employee.find();
+
+        return res.status(StatusCodes.OK).json({
+            status: StatusCodes.OK,
+            success: true,
+            data: employees,
+        });
+    } catch (error) {
+        return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
+    }
+};
+
+const getEmployeeById = async (req, res, next) => {
+    try {
+        const employeeId = req.params.id;
+
+        const employee = await Employee.findById(employeeId);
+
+        if (!employee) {
+            return next(new ErrorHander(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
+        }
+
+        return res.status(StatusCodes.OK).json({
+            status: StatusCodes.OK,
+            success: true,
+            data: employee,
+        });
+    } catch (error) {
+        return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
+    }
+};
 
 module.exports = {
-    addEmployee
+    addEmployee,
+    getAllEmployees,
+    getEmployeeById,
 };

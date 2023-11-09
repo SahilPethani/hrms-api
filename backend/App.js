@@ -4,7 +4,6 @@ const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
 const dotenv = require('dotenv');
 const cors = require('cors');
-const path = require("path");
 
 const errorMiddleware = require("./errors/error");
 dotenv.config({ path: "backend/config/config.env" });
@@ -15,11 +14,6 @@ app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
-
-const absoluteUploadsPath = path.join(__dirname, '..', 'uploads');
-
-// Serve files from the "uploads" folder
-app.use('/uploads', express.static(absoluteUploadsPath));
 
 // Route imports
 const user = require("./routes/userRoute");

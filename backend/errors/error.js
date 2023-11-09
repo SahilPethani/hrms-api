@@ -20,7 +20,6 @@ module.exports = (err, req, res, next) => {
   }
 
   // Log the error for debugging (you can use a logging library or service)
-  console.error(err);
 
   res.status(err.statusCode).json({
     status: err.statusCode,
