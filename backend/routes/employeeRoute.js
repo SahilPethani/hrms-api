@@ -4,7 +4,7 @@ const {
     authenticateUser,
     authorizePermission
 } = require('../middleware/auth')
-const { addEmployee, getAllEmployees, getEmployeeById } = require("../controller/employeeController")
+const { addEmployee, getAllEmployees, getEmployeeById, updateEmployee } = require("../controller/employeeController")
 const FileUplaodToFirebase = require("../middleware/multerConfig");
 
 const router = express.Router()
@@ -15,10 +15,14 @@ router
 
 router
     .route("/employee/all")
-    .post(authenticateUser, authorizePermission("employee"), getAllEmployees)
+    .get(authenticateUser, authorizePermission("employee"), getAllEmployees)
 
 router
     .route("/employee/:id")
-    .post(authenticateUser, authorizePermission("employee"), getEmployeeById)
+    .get(authenticateUser, authorizePermission("employee"), getEmployeeById)
+
+router
+    .route("/employee/edit/:id")
+    .put(authenticateUser, authorizePermission("employee"), updateEmployee)
 
 module.exports = router
