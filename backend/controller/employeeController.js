@@ -185,12 +185,12 @@ function generateUniqueUserId(firstName, lastName, dateOfBirth) {
 
 const getAllEmployees = async (req, res, next) => {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const perPage = parseInt(req.query.perPage) || 10;
+        const page = parseInt(req.query.page_no) || 1;
+        const perPage = parseInt(req.query.items_per_page) || 10;
 
-        const { searchtext } = req.query;
+        const { search_text } = req.query;
 
-        const query = searchtext ? { $or: [{ first_name: { $regex: searchtext, $options: 'i' } }, { last_name: { $regex: searchtext, $options: 'i' } }] } : {};
+        const query = search_text ? { $or: [{ first_name: { $regex: search_text, $options: 'i' } }, { last_name: { $regex: search_text, $options: 'i' } }] } : {};
 
         const skip = (page - 1) * perPage;
         const employees = await Employee.find(query)
@@ -209,7 +209,7 @@ const getAllEmployees = async (req, res, next) => {
                 total_items: allEmployees,
                 total_pages: totalPages,
                 current_page_item: employees.length,
-                current_page: parseInt(page),
+                page_no: parseInt(page),
                 items_per_page: parseInt(perPage),
             },
         });
