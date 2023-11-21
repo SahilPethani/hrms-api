@@ -3,6 +3,7 @@ const { StatusCodes } = require("http-status-codes");
 const ErrorHander = require("../middleware/errorhander");
 const User = require("../models/userModel");
 const FileUplaodToFirebase = require("../middleware/multerConfig");
+const { generateUniqueUserId } = require("../utils/helper");
 
 // const addEmployee = async (req, res, next) => {
 //     try {
@@ -137,15 +138,16 @@ const addEmployee = async (req, res, next) => {
             status,
             create_user,
             avatar: certificateDownloadURL,
-            user_name: userId,
+            user_id: userId,
         });
 
         const savedEmployee = await employee.save();
         if (savedEmployee) {
             if (Number(create_user) === 1) {
                 const user = new User({
-                    username: userId,
-                    email: savedEmployee.email,
+                    user_id: userId,
+                    avatar: certificateDownloadURL,
+                    username: first_name + "" + last_name,
                     password: savedEmployee.password,
                     role: 'employee',
                 });
@@ -160,8 +162,7 @@ const addEmployee = async (req, res, next) => {
                 data: {
                     employee: savedEmployee,
                     user: Number(create_user) === 1 ? {
-                        username: userId,
-                        email: savedEmployee.email,
+                        username: first_name + "" + last_name,
                         role: 'employee',
                     } : null,
                 },
@@ -172,15 +173,6 @@ const addEmployee = async (req, res, next) => {
     } catch (error) {
         return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
-}
-
-function generateUniqueUserId(firstName, lastName, dateOfBirth) {
-    const firstTwoLetters = firstName.slice(0, 2).toUpperCase();
-    const firstLetterLastName = lastName.slice(0, 1).toUpperCase();
-    const birthYearDigits = new Date(dateOfBirth).getFullYear().toString();
-
-    const userId = `${firstTwoLetters}${firstLetterLastName}${birthYearDigits}`;
-    return userId;
 }
 
 const getAllEmployees = async (req, res, next) => {
@@ -238,10 +230,139 @@ const getEmployeeById = async (req, res, next) => {
     }
 };
 
+// const updateEmployee = async (req, res, next) => {
+//     try {
+//         const employeeId = req.params.id;
+
+//         const {
+//             first_name,
+//             last_name,
+//             address,
+//             city,
+//             email,
+//             country,
+//         } = req.body;
+
+//         const updatedEmployee = await Employee.findByIdAndUpdate(
+//             employeeId,
+//             {
+//                 $set: {
+//                     first_name,
+//                     last_name,
+//                     address,
+//                     city,
+//                     email,
+//                     country,
+//                 },
+//             },
+//             { new: true }
+//         );
+
+//         if (!updatedEmployee) {
+//             return next(new ErrorHander(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
+//         }
+
+//         return res.status(StatusCodes.OK).json({
+//             status: StatusCodes.OK,
+//             success: true,
+//             message: `Employee updated successfully`,
+//         });
+//     } catch (error) {
+//         return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
+//     }
+// };
+
+// const updateEmployee = async (req, res, next) => {
+//     try {
+//         const employeeId = req.params.id;
+
+//         const {
+//             first_name,
+//             last_name,
+//             address,
+//             city,
+//             email,
+//             country,
+//             avatar: newAvatar,
+//             date_of_birth,
+//             designation,
+//             join_date,
+//             education,
+//             gender,
+//             mobile,
+//             status
+//         } = req.body;
+
+//         const updatedEmployeeData = {
+//             first_name,
+//             last_name,
+//             address,
+//             city,
+//             email,
+//             country,
+//             date_of_birth,
+//             designation,
+//             join_date,
+//             education,
+//             gender,
+//             mobile,
+//             status
+//         };
+
+//         if (newAvatar) {
+//             const newAvatarURL = await FileUplaodToFirebase.uploadCertifiesToFierbase(newAvatar);
+
+//             updatedEmployeeData.avatar = newAvatarURL;
+
+//             const employeEE = await Employee.findById(employeeId);
+
+//             const userId = generateUniqueUserId(first_name, last_name, date_of_birth);
+
+//             const updatedUser = await User.findOneAndUpdate(
+//                 { user_id: employeEE.user_id },
+//                 {
+//                     $set: {
+//                         user_id: userId,
+//                         username: `${first_name} ${last_name}`,
+//                         avatar: newAvatarURL,
+//                     },
+//                 },
+//                 { new: true }
+//             );
+
+//             updatedEmployeeData.user_id = userId;
+
+//             if (!updatedUser) {
+//                 return next(new ErrorHander(`User not found with user_id ${userId}`, StatusCodes.NOT_FOUND));
+//             }
+//         }
+
+//         // Update the employee
+//         const updatedEmployee = await Employee.findByIdAndUpdate(
+//             employeeId,
+//             { $set: updatedEmployeeData },
+//             { new: true }
+//         );
+
+//         if (!updatedEmployee) {
+//             return next(new ErrorHander(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
+//         }
+
+//         return res.status(StatusCodes.OK).json({
+//             status: StatusCodes.OK,
+//             success: true,
+//             message: `Employee updated successfully`,
+//             data: updatedEmployee,
+//         });
+//     } catch (error) {
+//         return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
+//     }
+// };
+
 const updateEmployee = async (req, res, next) => {
     try {
         const employeeId = req.params.id;
-
+        
         const {
             first_name,
             last_name,
@@ -249,20 +370,47 @@ const updateEmployee = async (req, res, next) => {
             city,
             email,
             country,
+            date_of_birth,
+            designation,
+            join_date,
+            education,
+            gender,
+            mobile,
+            status
         } = req.body;
+
+        const newAvatar = req.file;
+
+        const updatedEmployeeData = {
+            first_name,
+            last_name,
+            address,
+            city,
+            email,
+            country,
+            date_of_birth,
+            designation,
+            join_date,
+            education,
+            gender,
+            mobile,
+            status
+        };
+
+        if (newAvatar) {
+            const newAvatarURL = await FileUplaodToFirebase.uploadCertifiesToFierbase(newAvatar);
+
+            const existingEmployee = await Employee.findById(employeeId);
+            if (existingEmployee.avatar) {
+                await FileUplaodToFirebase.deleteFileFromFirebase(existingEmployee.avatar);
+            }
+
+            updatedEmployeeData.avatar = newAvatarURL;
+        }
 
         const updatedEmployee = await Employee.findByIdAndUpdate(
             employeeId,
-            {
-                $set: {
-                    first_name,
-                    last_name,
-                    address,
-                    city,
-                    email,
-                    country,
-                },
-            },
+            { $set: updatedEmployeeData },
             { new: true }
         );
 
@@ -274,11 +422,14 @@ const updateEmployee = async (req, res, next) => {
             status: StatusCodes.OK,
             success: true,
             message: `Employee updated successfully`,
+            data: updatedEmployee,
         });
     } catch (error) {
         return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
+
+
 
 module.exports = {
     addEmployee,

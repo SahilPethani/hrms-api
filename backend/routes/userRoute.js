@@ -4,6 +4,7 @@ const {
     loginUser,
     logout,
 } = require("../controller/userController")
+const FileUplaodToFirebase = require("../middleware/multerConfig");
 
 const {
     authenticateUser,
@@ -14,7 +15,7 @@ const router = express.Router()
 
 router
     .route("/auth/register")
-    .post(registerUser)
+    .post(FileUplaodToFirebase.uploadMulter.single("avatar"), registerUser)
 
 router
     .route("/auth/login")

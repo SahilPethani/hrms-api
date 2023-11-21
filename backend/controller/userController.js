@@ -2,24 +2,33 @@ const User = require("../models/userModel");
 const { StatusCodes } = require("http-status-codes");
 const { generateToken } = require("../utils/tokenGenerator");
 const ErrorHander = require("../middleware/errorhander");
-const bcrypt = require('bcryptjs');
+const FileUplaodToFirebase = require("../middleware/multerConfig");
 
 const registerUser = async (req, res, next) => {
   try {
-    const { username, password, email, role } = req.body;
+    const { user_id, username, password, role } = req.body;
 
-    if (!username || !password || !email || !role) {
+    if (!username || !password || !role) {
       return next(new ErrorHander("All fields are required for registration", StatusCodes.BAD_REQUEST));
     }
 
-    const existingUser = await User.findOne({ username });
+    const existingUser = await User.findOne({ user_id });
 
     if (existingUser) {
-      return next(new ErrorHander("Username is already in use", StatusCodes.BAD_REQUEST));
+      return next(new ErrorHander("User Id is already in use", StatusCodes.BAD_REQUEST));
     }
 
+    const avatar = req.file;
+
+    if (!avatar) {
+      return next(new ErrorHander("Avatar image is required", StatusCodes.BAD_REQUEST));
+    }
+
+    let certificateDownloadURL = await FileUplaodToFirebase.uploadCertifiesToFierbase(avatar);
+
+
     // const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ username, email, password, role });
+    const user = new User({ user_id, username, password, role, avatar: certificateDownloadURL, });
 
     await user.save();
 
@@ -36,13 +45,13 @@ const registerUser = async (req, res, next) => {
 
 const loginUser = async (req, res, next) => {
   try {
-    const { username, password } = req.body;
+    const { user_id, password } = req.body;
 
-    if (!username || !password) {
+    if (!user_id || !password) {
       return next(new ErrorHander("All fields are required for login", StatusCodes.BAD_REQUEST));
     }
 
-    const user = await User.findOne({ username }).select("+password");
+    const user = await User.findOne({ user_id }).select("+password");
 
     if (!user) {
       return next(new ErrorHander("Authentication failed", StatusCodes.UNAUTHORIZED));
