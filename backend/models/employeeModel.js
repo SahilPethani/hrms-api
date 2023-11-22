@@ -2,19 +2,31 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const validator = require('validator');
 
-const userSchema = new mongoose.Schema({
+const PunchSchema = new mongoose.Schema({
+  type: { type: String, enum: ["punchIn", "punchOut"], required: true },
+  punchIn: { type: Date },
+  punchOut: { type: Date },
+  note: { type: String },
+});
 
+const AttendanceSchema = new mongoose.Schema({
+  date: { type: Date, default: Date.now },
+  present: { type: Number, enum: [0, 1], required: true },
+  punches: [PunchSchema],
+});
+
+const userSchema = new mongoose.Schema({
   user_id: { type: String, unique: true, required: true },
   first_name: {
     type: String,
     required: [true, "Please Enter Name"],
     unique: true,
-    maxLength: [30, "Name Connot exceed 30 characters"],
+    maxLength: [30, "Name Cannot exceed 30 characters"],
     minLength: [2, "Name should have more than 2 characters"]
   },
   last_name: {
     type: String,
-    required: [true, 'Please enter  last name']
+    required: [true, 'Please enter last name']
   },
   gender: {
     type: Number,
@@ -43,7 +55,6 @@ const userSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    required: [true, "Please Enter Email"],
     unique: true,
     validate: [validator.isEmail, "Please Enter Email"]
   },
@@ -81,6 +92,7 @@ const userSchema = new mongoose.Schema({
     ],
     default: 0
   },
+  attendances: [AttendanceSchema],
 });
 
 // userSchema.pre('save', async function (next) {
