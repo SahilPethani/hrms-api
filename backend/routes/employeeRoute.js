@@ -3,7 +3,7 @@ const {
     authenticateUser,
     authorizePermission
 } = require('../middleware/auth');
-const { addEmployee, getAllEmployees, getEmployeeById, updateEmployee } = require("../controller/employeeController");
+const { addEmployee, getAllEmployees, getEmployeeById, updateEmployee, deleteEmployee } = require("../controller/employeeController");
 const FileUplaodToFirebase = require("../middleware/multerConfig");
 
 const router = express.Router();
@@ -23,5 +23,9 @@ router
 router
     .route("/employee/edit/:id")
     .put(authenticateUser, authorizePermission("admin"), FileUplaodToFirebase.uploadMulter.single("avatar"), updateEmployee);
+
+router
+    .route("/employee/delete/:id")
+    .put(authenticateUser, authorizePermission("admin"), deleteEmployee);
 
 module.exports = router;

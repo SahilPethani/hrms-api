@@ -24,16 +24,4 @@ router
 router
     .route("/logout").get(logout)
 
-// admin route
-
-router
-//     .route("/admin/users")
-//     .get(authenticateUser, authorizePermission("admin"), getAllUser)
-
-// router
-//     .route("/admin/users/:id")
-//     .get(authenticateUser, authorizePermission("admin"), getSingelUser)
-//     .put(authenticateUser, authorizePermission("admin"), updateUserRole)
-//     .delete(authenticateUser, authorizePermission("admin"), deleteUser)
-
 module.exports = router

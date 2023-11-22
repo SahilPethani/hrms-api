@@ -241,48 +241,6 @@ const getEmployeeById = async (req, res, next) => {
 //             city,
 //             email,
 //             country,
-//         } = req.body;
-
-//         const updatedEmployee = await Employee.findByIdAndUpdate(
-//             employeeId,
-//             {
-//                 $set: {
-//                     first_name,
-//                     last_name,
-//                     address,
-//                     city,
-//                     email,
-//                     country,
-//                 },
-//             },
-//             { new: true }
-//         );
-
-//         if (!updatedEmployee) {
-//             return next(new ErrorHander(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
-//         }
-
-//         return res.status(StatusCodes.OK).json({
-//             status: StatusCodes.OK,
-//             success: true,
-//             message: `Employee updated successfully`,
-//         });
-//     } catch (error) {
-//         return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
-//     }
-// };
-
-// const updateEmployee = async (req, res, next) => {
-//     try {
-//         const employeeId = req.params.id;
-
-//         const {
-//             first_name,
-//             last_name,
-//             address,
-//             city,
-//             email,
-//             country,
 //             avatar: newAvatar,
 //             date_of_birth,
 //             designation,
@@ -430,10 +388,48 @@ const updateEmployee = async (req, res, next) => {
 };
 
 
+const deleteEmployee = async (req, res, next) => {
+    try {
+        const employeeId = req.params.id;
+
+        const existingEmployee = await Employee.findById(employeeId);
+
+        if (!existingEmployee) {
+            return next(new ErrorHander(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
+        }
+
+        let deletedUser;
+        const userToDelete = await User.findOne({ user_id: existingEmployee.user_id });
+
+        if (userToDelete) {
+            deletedUser = await User.findOneAndDelete({ user_id: existingEmployee.user_id });
+        }
+
+        if (existingEmployee.avatar) {
+            await FileUplaodToFirebase.deleteFileFromFirebase(existingEmployee.avatar);
+        }
+
+        const deletedEmployee = await Employee.findByIdAndDelete(employeeId);
+
+        return res.status(StatusCodes.OK).json({
+            status: StatusCodes.OK,
+            success: true,
+            message: `Employee and associated user deleted successfully`,
+            data: {
+                deletedEmployee,
+                deletedUser,
+            },
+        });
+    } catch (error) {
+        return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
+    }
+};
+
 
 module.exports = {
     addEmployee,
     getAllEmployees,
     getEmployeeById,
-    updateEmployee
+    updateEmployee,
+    deleteEmployee
 };
