@@ -26,6 +26,6 @@ router
 
 router
     .route("/employee/delete/:id")
-    .put(authenticateUser, authorizePermission("admin"), deleteEmployee);
+    .delete(authenticateUser, authorizePermission("admin"), deleteEmployee);
 
 module.exports = router;

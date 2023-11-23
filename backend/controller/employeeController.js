@@ -23,14 +23,8 @@ const addEmployee = async (req, res, next) => {
             create_user
         } = req.body;
 
-        if (!first_name || !last_name || !email || !password) {
-            return next(new ErrorHander("All fields are required for registration", StatusCodes.BAD_REQUEST));
-        }
-
-        const existingUser = await Employee.findOne({ email });
-
-        if (existingUser) {
-            return next(new ErrorHander("Email is already in use", StatusCodes.BAD_REQUEST));
+        if (!first_name || !last_name) {
+            return next(new ErrorHander("First name and last name are required", StatusCodes.BAD_REQUEST));
         }
 
         const avatar = req.file;
@@ -39,7 +33,7 @@ const addEmployee = async (req, res, next) => {
             return next(new ErrorHander("Avatar image is required", StatusCodes.BAD_REQUEST));
         }
 
-        let certificateDownloadURL = await FileUplaodToFirebase.uploadCertifiesToFierbase(avatar);
+        const certificateDownloadURL = await FileUplaodToFirebase.uploadCertifiesToFierbase(avatar);
 
         const userId = generateUniqueUserId(first_name, last_name, date_of_birth);
 
@@ -62,13 +56,14 @@ const addEmployee = async (req, res, next) => {
         });
 
         const savedEmployee = await employee.save();
+
         if (savedEmployee) {
             if (Number(create_user) === 1) {
                 const user = new User({
                     user_id: userId,
                     avatar: certificateDownloadURL,
-                    username: first_name + "" + last_name,
                     password: savedEmployee.password,
+                    username: first_name + "" + last_name,
                     role: 'employee',
                 });
 
@@ -94,6 +89,7 @@ const addEmployee = async (req, res, next) => {
         return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 }
+
 
 const getAllEmployees = async (req, res, next) => {
     try {
@@ -150,10 +146,11 @@ const getEmployeeById = async (req, res, next) => {
     }
 };
 
+
 const updateEmployee = async (req, res, next) => {
     try {
         const employeeId = req.params.id;
-        
+
         const {
             first_name,
             last_name,
@@ -189,13 +186,13 @@ const updateEmployee = async (req, res, next) => {
         };
 
         if (newAvatar) {
-            const newAvatarURL = await FileUplaodToFirebase.uploadCertifiesToFierbase(newAvatar);
-
             const existingEmployee = await Employee.findById(employeeId);
+
             if (existingEmployee.avatar) {
                 await FileUplaodToFirebase.deleteFileFromFirebase(existingEmployee.avatar);
             }
 
+            const newAvatarURL = await FileUplaodToFirebase.uploadCertifiesToFierbase(newAvatar);
             updatedEmployeeData.avatar = newAvatarURL;
         }
 

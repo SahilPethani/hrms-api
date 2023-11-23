@@ -11,6 +11,7 @@ firebaseApp.initializeApp({
     appId: "1:469618831214:web:538ae5d2bc5cfd39209b7f",
     measurementId: "G-5BX6XFYVCG"
 });
+
 const storage = firebaseStorage.getStorage();
 const uploadMulter = multer({ storage: multer.memoryStorage() });
 
@@ -40,13 +41,11 @@ const uploadCertifiesToFierbase = async (file) => {
     }
 }
 
-const deleteFileFromFirebase = async (fileURL) => {
+const deleteFileFromFirebase = async (fileName) => {
     try {
-        const storageRef = firebaseStorage.refFromURL(fileURL);
+        const storageRef = firebaseStorage.ref(storage, fileName);
         await firebaseStorage.deleteObject(storageRef);
-        console.log(`File deleted successfully: ${fileURL}`);
     } catch (error) {
-        console.error("Error deleting file from Firebase Storage:", error);
         throw error;
     }
 };
