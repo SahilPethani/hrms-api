@@ -12,7 +12,6 @@ const AttendanceDetailSchema = new mongoose.Schema({
     present: { type: Number, enum: [0, 1], required: true },
     date: { type: Date, default: Date.now },
     punches: [PunchSchema],
-    totalWorkingHours: { type: Number, default: 0 }, // Add this line
 });
 
 const AttendanceSchema = new mongoose.Schema({
