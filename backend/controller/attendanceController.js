@@ -2,7 +2,7 @@ const { StatusCodes } = require("http-status-codes");
 const ErrorHandler = require("../middleware/errorhander");
 const Employee = require("../models/employeeModel");
 const Attendance = require("../models/attendanceModel");
-const { calculateWorkingHours, calculateOvertime, calculateProductivity } = require("../utils/helper");
+const { calculateWorkingHours, calculateOvertime, calculateProductivity, calculateAverageInTime, calculateAverageOutTime, calculateAverageOvertime, calculateStatus } = require("../utils/helper");
 
 // const punchIn = async (req, res, next) => {
 //     try {
@@ -223,74 +223,83 @@ const punchOut = async (req, res, next) => {
 const getAttendanceDetails = async (req, res, next) => {
     try {
         const employeeId = req.params.id;
-        const requestedDate = req.query.date || new Date(requestedDate).setHours(0, 0, 0, 0);
 
         let employee = await Employee.findById(employeeId);
         if (!employee) {
             return next(new ErrorHandler(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
         }
-        const currentDate = new Date(requestedDate).setHours(0, 0, 0, 0);
 
-        let todayAttendance = await Attendance.findOne({
-            date: currentDate,
+        // Get all attendance records for the employee
+        const allAttendance = await Attendance.find({
             "attendanceDetails.employeeId": employee._id,
         });
 
-        if (!todayAttendance) {
-            return res.status(StatusCodes.OK).json({
-                status: StatusCodes.OK,
-                success: true,
-                message: `No attendance details found for the specified date`,
-                data: {
-                    attendanceDetails: [],
-                },
-            });
-        }
+        // Extract unique dates from all attendance records
+        const uniqueDates = Array.from(new Set(allAttendance.map(record => record.date.toISOString().split('T')[0])));
 
-        const employeeAttendanceDetails = todayAttendance.attendanceDetails.find(
-            (detail) => detail.employeeId.equals(employeeId)
-        );
+        // Create an object to store attendance details for each date
+        const monthlyAttendanceDetails = {};
 
-        const punches = employeeAttendanceDetails.punches;
+        // Loop through unique dates
+        uniqueDates.forEach(date => {
+            const attendanceRecord = allAttendance.find(record => record.date.toISOString().split('T')[0] === date);
 
-        const workingHours = calculateWorkingHours(punches);
-        const overtime = calculateOvertime(workingHours);
-        const productivity = calculateProductivity(workingHours);
+            if (attendanceRecord) {
+                // Flatten the punches array for the date
+                const punches = attendanceRecord.attendanceDetails.find(detail => detail.employeeId.equals(employeeId)).punches;
 
-        if (!employeeAttendanceDetails) {
-            return res.status(StatusCodes.OK).json({
-                status: StatusCodes.OK,
-                success: true,
-                message: `No attendance details found for the specified employee on the given date`,
-                data: {
-                    attendanceDetails: [],
-                },
-            });
-        }
+                // Sort punches by punchIn time
+                punches.sort((a, b) => a.punchIn - b.punchIn);
+
+                // Extract details for each attendance record
+                const attendanceDetails = punches.map(punch => ({
+                    checkInTime: punch.punchIn,
+                    checkOutTime: punch.punchOut || null,
+                    status: punch.punchOut ? 1 : 0,
+                }));
+
+                // If there's no punch in, add a record with zeros
+                if (attendanceDetails.length === 0) {
+                    attendanceDetails.push({
+                        checkInTime: null,
+                        checkOutTime: null,
+                        status: 0,
+                    });
+                }
+
+                // Set the date as the key in the object
+                monthlyAttendanceDetails[date] = attendanceDetails;
+            } else {
+                // If there's no attendance record for the date, set zeros
+                monthlyAttendanceDetails[date] = [{
+                    checkInTime: null,
+                    checkOutTime: null,
+                    status: 0,
+                }];
+            }
+        });
 
         return res.status(StatusCodes.OK).json({
             status: StatusCodes.OK,
             success: true,
             message: `Attendance details retrieved successfully`,
             data: {
-                date: employeeAttendanceDetails.date,
-                present: employeeAttendanceDetails.present,
                 employee: {
                     firstName: employee.first_name,
                     lastName: employee.last_name,
                     userId: employee.user_id,
                     designation: employee.designation,
+                    avatar: employee.avatar,
+                    joiningDate: employee.join_date,
                 },
-                workingHours,
-                overtime,
-                productivity,
-                attendanceDetails: employeeAttendanceDetails.punches || [],
+                monthlyAttendanceDetails,
             },
         });
     } catch (error) {
         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
+
 
 
 const getEmployeeAttendanceSummary = async (req, res, next) => {
@@ -301,11 +310,7 @@ const getEmployeeAttendanceSummary = async (req, res, next) => {
         const presentEmployees = await Attendance.find({
             date: currentDate,
             "attendanceDetails.present": 1,
-        }).populate('attendanceDetails.employeeId', 'first_name last_name user_id designation mobile');
-        
-        // const absentEmployees = await Employee.find({
-        //     _id: { $nin: presentEmployees.map(employee => employee.attendanceDetails[0].employeeId) },
-        // });
+        }).populate('attendanceDetails.employeeId', 'first_name last_name user_id designation mobile avatar');
 
         const absentEmployees = await Employee.find({
             _id: {
@@ -314,20 +319,6 @@ const getEmployeeAttendanceSummary = async (req, res, next) => {
                 })
             },
         });
-    
-        // const presentEmployeesData = presentEmployees.map(employeeAttendance => ({
-        //     date: employeeAttendance.date,
-        //     employee: {
-        //         _id: employeeAttendance.attendanceDetails[0].employeeId._id,
-        //         firstName: employeeAttendance.attendanceDetails[0].employeeId.first_name,
-        //         lastName: employeeAttendance.attendanceDetails[0].employeeId.last_name,
-        //         userId: employeeAttendance.attendanceDetails[0].employeeId.user_id,
-        //         mobile: employeeAttendance.attendanceDetails[0].employeeId.mobile,
-        //         designation: employeeAttendance.attendanceDetails[0].employeeId.designation,
-        //     },
-        //     present: true,
-        //     // punches: employeeAttendance.attendanceDetails[0].punches,
-        // }));
 
         const presentEmployeesData = presentEmployees.flatMap(employeeAttendance => {
             return employeeAttendance.attendanceDetails.map(detail => ({
@@ -339,6 +330,7 @@ const getEmployeeAttendanceSummary = async (req, res, next) => {
                     userId: detail.employeeId.user_id,
                     mobile: detail.employeeId.mobile,
                     designation: detail.employeeId.designation,
+                    avatar: detail.employeeId.avatar
                 },
                 present: true,
             }));
@@ -353,9 +345,9 @@ const getEmployeeAttendanceSummary = async (req, res, next) => {
                 userId: employee.user_id,
                 mobile: employee.mobile,
                 designation: employee.designation,
+                avatar: employee.avatar
             },
             present: false,
-            // punches: [],
         }));
 
         const employeeAttendanceSummary = [...presentEmployeesData, ...absentEmployeesData];
@@ -374,9 +366,94 @@ const getEmployeeAttendanceSummary = async (req, res, next) => {
     }
 };
 
+
+const getAttendanceSheet = async (req, res, next) => {
+    try {
+        const startDate = req.query.startDate;
+        const endDate = req.query.endDate;
+
+        let filter = {};
+
+        if (startDate && endDate) {
+            filter.date = {
+                $gte: new Date(startDate + 'T00:00:00.000Z'),
+                $lte: new Date(endDate + 'T23:59:59.999Z'),
+            };
+        } else {
+            const currentDate = new Date();
+            const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+            const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+
+            filter.date = {
+                $gte: firstDayOfMonth.setHours(0, 0, 0, 0),
+                $lte: lastDayOfMonth.setHours(23, 59, 59, 999),
+            };
+        }
+        const employeeAttendance = await Attendance.find(filter)
+            .populate('attendanceDetails.employeeId', 'first_name last_name user_id avatar')
+            .lean();
+
+        const attendanceSheet = await Promise.all(employeeAttendance.map(async (item) => {
+            const presentDetails = item.attendanceDetails.map(detail => ({
+                employee: {
+                    _id: detail.employeeId._id,
+                    firstName: detail.employeeId.first_name,
+                    lastName: detail.employeeId.last_name,
+                    userId: detail.employeeId.user_id,
+                    avatar: detail.employeeId.avatar,
+                },
+                present: detail.present === 1,
+            }));
+
+            const absentEmployees = await Employee.find({
+                _id: {
+                    $nin: presentDetails.filter(detail => detail.present).map(detail => detail.employee._id),
+                },
+            });
+
+            const absentDetails = absentEmployees.map(employee => ({
+                employee: {
+                    _id: employee._id,
+                    firstName: employee.first_name,
+                    lastName: employee.last_name,
+                    userId: employee.user_id,
+                    avatar: employee.avatar,
+                },
+                present: false,
+            }));
+
+            const summary = {
+                present: presentDetails.filter(detail => detail.present).length,
+                absent: absentDetails.length,
+            };
+
+            return {
+                date: item.date,
+                summary,
+                attendanceDetails: [...presentDetails, ...absentDetails],
+            };
+        }));
+
+        const filteredAttendanceSheet = attendanceSheet.filter(item => item !== null);
+
+        return res.status(StatusCodes.OK).json({
+            status: StatusCodes.OK,
+            success: true,
+            message: `Attendance sheet retrieved successfully`,
+            data: {
+                attendanceSheet: filteredAttendanceSheet,
+            },
+        });
+    } catch (error) {
+        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
+    }
+};
+
+
 module.exports = {
     punchIn,
     punchOut,
     getAttendanceDetails,
     getEmployeeAttendanceSummary,
+    getAttendanceSheet
 };
