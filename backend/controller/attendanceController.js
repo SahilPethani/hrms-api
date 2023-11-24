@@ -188,7 +188,7 @@ const punchOut = async (req, res, next) => {
 
         if (employeeAttendanceDetailsIndex !== -1) {
             todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches.push(punchOutDetails);
-            todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].present = 0;
+            // todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].present = 0;
         }
 
         await todayAttendance.save();
@@ -223,13 +223,17 @@ const punchOut = async (req, res, next) => {
 const getAttendanceDetails = async (req, res, next) => {
     try {
         const employeeId = req.params.id;
-        console.log("🚀 ~ file: attendanceController.js:226 ~ getAttendanceDetails ~ employeeId:", employeeId)
-        const requestedDate = req.query.date || new Date().toISOString().split('T')[0];
-        console.log("🚀 ~ file: attendanceController.js:227 ~ getAttendanceDetails ~ requestedDate:", requestedDate)
+        const requestedDate = req.query.date || new Date(requestedDate).setHours(0, 0, 0, 0);
 
-        const todayAttendance = await Attendance.findOne({
-            date: requestedDate,
-            "attendanceDetails.employeeId": employeeId,
+        let employee = await Employee.findById(employeeId);
+        if (!employee) {
+            return next(new ErrorHandler(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
+        }
+        const currentDate = new Date(requestedDate).setHours(0, 0, 0, 0);
+
+        let todayAttendance = await Attendance.findOne({
+            date: currentDate,
+            "attendanceDetails.employeeId": employee._id,
         });
 
         if (!todayAttendance) {
@@ -247,6 +251,12 @@ const getAttendanceDetails = async (req, res, next) => {
             (detail) => detail.employeeId.equals(employeeId)
         );
 
+        const punches = employeeAttendanceDetails.punches;
+
+        const workingHours = calculateWorkingHours(punches);
+        const overtime = calculateOvertime(workingHours);
+        const productivity = calculateProductivity(workingHours);
+
         if (!employeeAttendanceDetails) {
             return res.status(StatusCodes.OK).json({
                 status: StatusCodes.OK,
@@ -263,6 +273,17 @@ const getAttendanceDetails = async (req, res, next) => {
             success: true,
             message: `Attendance details retrieved successfully`,
             data: {
+                date: employeeAttendanceDetails.date,
+                present: employeeAttendanceDetails.present,
+                employee: {
+                    firstName: employee.first_name,
+                    lastName: employee.last_name,
+                    userId: employee.user_id,
+                    designation: employee.designation,
+                },
+                workingHours,
+                overtime,
+                productivity,
                 attendanceDetails: employeeAttendanceDetails.punches || [],
             },
         });
@@ -272,8 +293,90 @@ const getAttendanceDetails = async (req, res, next) => {
 };
 
 
+const getEmployeeAttendanceSummary = async (req, res, next) => {
+    try {
+        const requestedDate = req.query.date || new Date().toISOString().split('T')[0];
+        const currentDate = new Date(requestedDate).setHours(0, 0, 0, 0);
+
+        const presentEmployees = await Attendance.find({
+            date: currentDate,
+            "attendanceDetails.present": 1,
+        }).populate('attendanceDetails.employeeId', 'first_name last_name user_id designation mobile');
+        
+        // const absentEmployees = await Employee.find({
+        //     _id: { $nin: presentEmployees.map(employee => employee.attendanceDetails[0].employeeId) },
+        // });
+
+        const absentEmployees = await Employee.find({
+            _id: {
+                $nin: presentEmployees.flatMap(employeeAttendance => {
+                    return employeeAttendance.attendanceDetails.map(detail => detail.employeeId._id);
+                })
+            },
+        });
+    
+        // const presentEmployeesData = presentEmployees.map(employeeAttendance => ({
+        //     date: employeeAttendance.date,
+        //     employee: {
+        //         _id: employeeAttendance.attendanceDetails[0].employeeId._id,
+        //         firstName: employeeAttendance.attendanceDetails[0].employeeId.first_name,
+        //         lastName: employeeAttendance.attendanceDetails[0].employeeId.last_name,
+        //         userId: employeeAttendance.attendanceDetails[0].employeeId.user_id,
+        //         mobile: employeeAttendance.attendanceDetails[0].employeeId.mobile,
+        //         designation: employeeAttendance.attendanceDetails[0].employeeId.designation,
+        //     },
+        //     present: true,
+        //     // punches: employeeAttendance.attendanceDetails[0].punches,
+        // }));
+
+        const presentEmployeesData = presentEmployees.flatMap(employeeAttendance => {
+            return employeeAttendance.attendanceDetails.map(detail => ({
+                date: employeeAttendance.date,
+                employee: {
+                    _id: detail.employeeId._id,
+                    firstName: detail.employeeId.first_name,
+                    lastName: detail.employeeId.last_name,
+                    userId: detail.employeeId.user_id,
+                    mobile: detail.employeeId.mobile,
+                    designation: detail.employeeId.designation,
+                },
+                present: true,
+            }));
+        });
+
+        const absentEmployeesData = absentEmployees.map(employee => ({
+            date: requestedDate,
+            employee: {
+                _id: employee._id,
+                firstName: employee.first_name,
+                lastName: employee.last_name,
+                userId: employee.user_id,
+                mobile: employee.mobile,
+                designation: employee.designation,
+            },
+            present: false,
+            // punches: [],
+        }));
+
+        const employeeAttendanceSummary = [...presentEmployeesData, ...absentEmployeesData];
+
+        return res.status(StatusCodes.OK).json({
+            status: StatusCodes.OK,
+            success: true,
+            message: `Employee attendance summary retrieved successfully`,
+            data: {
+                date: requestedDate,
+                employeeAttendanceSummary,
+            },
+        });
+    } catch (error) {
+        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
+    }
+};
+
 module.exports = {
     punchIn,
     punchOut,
-    getAttendanceDetails
+    getAttendanceDetails,
+    getEmployeeAttendanceSummary,
 };
