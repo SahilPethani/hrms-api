@@ -7,8 +7,8 @@ const router = express.Router();
 router.post('/punch-in/:id',authenticateUser, authorizePermission("employee"),  punchIn);
 router.post('/punch-out/:id',authenticateUser, authorizePermission("employee"),  punchOut);
 
-router.get('/attendance/detail/:id',authenticateUser, authorizePermission("employee"),  getAttendanceDetails);
-router.get('/attendance/summary',authenticateUser, authorizePermission("employee"),  getEmployeeAttendanceSummary);
-router.get('/attendance/sheet',authenticateUser, authorizePermission("employee"),  getAttendanceSheet);
+router.get('/attendance/detail/:id',authenticateUser, authorizePermission("admin"),  getAttendanceDetails);
+router.get('/attendance/summary',authenticateUser, authorizePermission("admin"),  getEmployeeAttendanceSummary);
+router.get('/attendance/sheet',authenticateUser, authorizePermission("admin"),  getAttendanceSheet);
 
 module.exports = router;
