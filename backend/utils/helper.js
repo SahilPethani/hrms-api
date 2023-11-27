@@ -116,3 +116,77 @@ module.exports = {
     calculateAverageOvertime,
     calculateStatus,
 };
+
+
+const getAttendanceSheet = async (req, res, next) => {
+    try {
+        const startDateParam = req.query.startDate;
+        const endDateParam = req.query.endDate;
+
+        const currentDate = new Date();
+        const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+
+        // Set the timezone to Indian Standard Time (IST)
+        const istOptions = { timeZone: 'Asia/Kolkata' };
+
+        // Set the start date to either the provided start date or the first day of the month
+        const startDate = startDateParam
+            ? new Date(`${startDateParam}T00:00:00.000Z`).toLocaleString('en-US', istOptions)
+            : firstDayOfMonth.toLocaleString('en-US', istOptions);
+
+        // Set the end date to either the provided end date or the last day of the month
+        const endDate = endDateParam
+            ? new Date(`${endDateParam}T23:59:59.999Z`).toLocaleString('en-US', istOptions)
+            : lastDayOfMonth.toLocaleString('en-US', istOptions);
+
+        const filter = {
+            'attendances.date': {
+                $gte: startDate,
+                $lte: endDate,
+            },
+        };
+
+        const employees = await Employee.find(filter).lean();
+
+        const attendanceSheet = employees.map(employee => {
+            const attendanceDetails = employee.attendances
+                .filter(attendance =>
+                    new Date(attendance.date).toLocaleString('en-US', istOptions) >= startDate &&
+                    new Date(attendance.date).toLocaleString('en-US', istOptions) <= endDate
+                )
+                .map(attendanceData => ({
+                    date: new Date(attendanceData.date).toLocaleString('en-US', istOptions),
+                    dayName: getDayName(new Date(attendanceData.date).getDay()),
+                    present: attendanceData.present === 1,
+                    absent: new Date(attendanceData.date).getDay() === 0 ? true : attendanceData.present !== 1,
+                }));
+
+            return {
+                employee: {
+                    _id: employee._id,
+                    firstName: employee.first_name,
+                    lastName: employee.last_name,
+                    userId: employee.user_id,
+                    avatar: employee.avatar,
+                },
+                attendanceDetails,
+            };
+        });
+
+        return res.status(StatusCodes.OK).json({
+            status: StatusCodes.OK,
+            success: true,
+            message: "Attendance sheet retrieved successfully",
+            data: attendanceSheet,
+        });
+    } catch (error) {
+        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
+    }
+};
+
+// Function to get the day name
+const getDayName = (dayIndex) => {
+    const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return daysOfWeek[dayIndex];
+};
