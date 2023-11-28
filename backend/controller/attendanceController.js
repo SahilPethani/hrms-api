@@ -2,87 +2,8 @@ const { StatusCodes } = require("http-status-codes");
 const ErrorHandler = require("../middleware/errorhander");
 const Employee = require("../models/employeeModel");
 const Attendance = require("../models/attendanceModel");
-const { calculateWorkingHours, calculateOvertime, calculateProductivity, calculateAverageInTime, calculateAverageOutTime, calculateAverageOvertime, calculateStatus } = require("../utils/helper");
+const { calculateWorkingHours, getDayName } = require("../utils/helper");
 const Holiday = require("../models/holidayModel");
-
-// const punchIn = async (req, res, next) => {
-//     try {
-//         const employeeId = req.params.id;
-//         const note = req.body.note;
-
-//         let employee = await Employee.findById(employeeId);
-//         if (!employee) {
-//             return next(new ErrorHandler(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
-//         }
-
-//         const currentDate = new Date().setHours(0, 0, 0, 0);
-
-//         let todayAttendance = await Attendance.findOne({
-//             date: currentDate,
-//             "attendanceDetails.employeeId": employee._id,
-//         });
-
-//         if (!todayAttendance) {
-//             // If attendance record for the current date does not exist, create a new one
-//             todayAttendance = await Attendance.findOneAndUpdate(
-//                 { date: currentDate },
-//                 {
-//                     $addToSet: {
-//                         attendanceDetails: {
-//                             employeeId: employee._id,
-//                             present: 1,
-//                             punches: [],
-//                         },
-//                     },
-//                 },
-//                 { upsert: true, new: true }
-//             );
-//         }
-
-//         const punchInDetails = {
-//             type: "punchIn",
-//             punchIn: new Date(),
-//             note: note,
-//         };
-
-//         const employeeAttendanceDetailsIndex = todayAttendance.attendanceDetails.findIndex(
-//             (detail) => detail.employeeId.equals(employee._id)
-//         );
-
-//         if (employeeAttendanceDetailsIndex !== -1) {
-//             todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches.push(punchInDetails);
-//             todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].present = 1;
-//         }
-
-//         await todayAttendance.save();
-
-//         const existingAttendanceIndex = employee.attendances.findIndex(
-//             (attendance) => attendance.date.toISOString() === todayAttendance.date.toISOString()
-//         );
-
-//         if (existingAttendanceIndex !== -1) {
-//             employee.attendances[existingAttendanceIndex].punches = todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches;
-//         } else {
-//             const attendanceData = {
-//                 date: todayAttendance.date,
-//                 present: todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].present,
-//                 punches: todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches,
-//             };
-//             employee.attendances.push(attendanceData);
-//         }
-
-//         await employee.save();
-
-//         return res.status(StatusCodes.OK).json({
-//             status: StatusCodes.OK,
-//             success: true,
-//             message: `Employee punched in successfully`,
-//         });
-//     } catch (error) {
-//         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
-//     }
-// };
-
 
 const punchIn = async (req, res, next) => {
     try {
@@ -157,8 +78,6 @@ const punchIn = async (req, res, next) => {
         }
 
         await todayAttendance.save();
-
-        // Update employee's attendances
         const attendanceData = {
             date: todayAttendance.date,
             present: todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].present,
@@ -172,12 +91,12 @@ const punchIn = async (req, res, next) => {
             status: StatusCodes.OK,
             success: true,
             message: `Employee punched in successfully`,
+            data: todayAttendance
         });
     } catch (error) {
         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
-
 
 const punchOut = async (req, res, next) => {
     try {
@@ -253,55 +172,47 @@ const getAttendanceDetails = async (req, res, next) => {
             return next(new ErrorHandler(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
         }
 
-        // Get all attendance records for the employee
-        const allAttendance = await Attendance.find({
-            "attendanceDetails.employeeId": employee._id,
-        });
+        const monthlyAttendanceDetails = [];
 
-        // Extract unique dates from all attendance records
-        const uniqueDates = Array.from(new Set(allAttendance.map(record => record.date.toISOString().split('T')[0])));
+        employee.attendances.forEach(attendanceRecord => {
+            const date = attendanceRecord.date.toISOString().split('T')[0];
+            const punches = attendanceRecord.punches;
 
-        // Create an object to store attendance details for each date
-        const monthlyAttendanceDetails = {};
+            const attendanceDetail = {
+                date,
+                checkInTime: null,
+                checkOutTime: null,
+                totalWorkingHours: 0,
+                present: false,
+            };
 
-        // Loop through unique dates
-        uniqueDates.forEach(date => {
-            const attendanceRecord = allAttendance.find(record => record.date.toISOString().split('T')[0] === date);
+            if (punches.length > 0) {
+                const firstPunch = punches[0].punchIn;
+                const lastPunch = punches.slice(-1)[0].punchOut || null;
 
-            if (attendanceRecord) {
-                // Flatten the punches array for the date
-                const punches = attendanceRecord.attendanceDetails.find(detail => detail.employeeId.equals(employeeId)).punches;
+                attendanceDetail.checkInTime = new Date(firstPunch).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
+                attendanceDetail.checkOutTime = lastPunch ? new Date(lastPunch).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' }) : '00:00';
 
-                // Sort punches by punchIn time
-                punches.sort((a, b) => a.punchIn - b.punchIn);
-
-                // Extract details for each attendance record
-                const attendanceDetails = punches.map(punch => ({
-                    checkInTime: punch.punchIn,
-                    checkOutTime: punch.punchOut || null,
-                    status: punch.punchOut ? 1 : 0,
-                }));
-
-                // If there's no punch in, add a record with zeros
-                if (attendanceDetails.length === 0) {
-                    attendanceDetails.push({
-                        checkInTime: null,
-                        checkOutTime: null,
-                        status: 0,
-                    });
+                if (lastPunch) {
+                    const totalHours = calculateWorkingHours(punches);
+                    attendanceDetail.totalWorkingHours = totalHours.toFixed(2);
                 }
 
-                // Set the date as the key in the object
-                monthlyAttendanceDetails[date] = attendanceDetails;
-            } else {
-                // If there's no attendance record for the date, set zeros
-                monthlyAttendanceDetails[date] = [{
-                    checkInTime: null,
-                    checkOutTime: null,
-                    status: 0,
-                }];
+                attendanceDetail.present = true;
             }
+
+            monthlyAttendanceDetails.push(attendanceDetail);
         });
+
+        // Calculate Average Working Hours, Average In Time, and Average Out Time
+        const totalWorkingHours = monthlyAttendanceDetails.reduce((sum, attendance) => sum + parseFloat(attendance.totalWorkingHours), 0);
+        const totalCheckInTime = monthlyAttendanceDetails.reduce((sum, attendance) => sum + (attendance.checkInTime ? new Date(`2000-01-01 ${attendance.checkInTime}`).getTime() : 0), 0);
+        const totalCheckOutTime = monthlyAttendanceDetails.reduce((sum, attendance) => sum + (attendance.checkOutTime ? new Date(`2000-01-01 ${attendance.checkOutTime}`).getTime() : 0), 0);
+
+        const averageWorkingHours = (totalWorkingHours / monthlyAttendanceDetails.length).toFixed(2);
+        const averageInTime = new Date(totalCheckInTime / monthlyAttendanceDetails.length).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
+        const averageOutTime = new Date(totalCheckOutTime / monthlyAttendanceDetails.length).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
+
 
         return res.status(StatusCodes.OK).json({
             status: StatusCodes.OK,
@@ -309,14 +220,18 @@ const getAttendanceDetails = async (req, res, next) => {
             message: `Attendance details retrieved successfully`,
             data: {
                 employee: {
+                    _id: employee._id,
                     firstName: employee.first_name,
                     lastName: employee.last_name,
                     userId: employee.user_id,
-                    designation: employee.designation,
                     avatar: employee.avatar,
+                    designation: employee.designation,
                     joiningDate: employee.join_date,
                 },
-                monthlyAttendanceDetails,
+                averageWorkingHours,
+                averageInTime,
+                averageOutTime,
+                attendessdetail: monthlyAttendanceDetails,
             },
         });
     } catch (error) {
@@ -404,7 +319,6 @@ const getAttendanceSheet = async (req, res, next) => {
             startDate = startDateParam
                 ? new Date(`${startDateParam}T00:00:00.000Z`).toLocaleString('en-US', istOptions)
                 : firstDayOfMonth.toLocaleString('en-US', istOptions);
-
             endDate = endDateParam
                 ? new Date(`${endDateParam}T23:59:59.999Z`).toLocaleString('en-US', istOptions)
                 : lastDayOfMonth.toLocaleString('en-US', istOptions);
@@ -423,6 +337,7 @@ const getAttendanceSheet = async (req, res, next) => {
                 },
             },
         };
+        const Holidays = await Holiday.find();
 
         const employees = await Employee.find(filter).lean();
         const attendanceSheet = employees.map(employee => {
@@ -432,12 +347,19 @@ const getAttendanceSheet = async (req, res, next) => {
                 const attendanceData = employee.attendances.find(attendance =>
                     new Date(attendance.date).getDate() === currentDateInLoop.getDate()
                 );
+                const isHoliday = Holidays.find((date) => {
+                    const holidayDateUTC = new Date(date.holiday_date);
+                    const holidayDateLocal = holidayDateUTC.toLocaleString('en-US', istOptions);
+                    const currentDateInLoopLocal = currentDateInLoop.toLocaleString('en-US', istOptions);
+                    return holidayDateLocal === currentDateInLoopLocal;
+                });
 
                 return {
                     date: currentDateInLoop.toLocaleString('en-US', istOptions),
                     dayName: getDayName(currentDateInLoop.getDay()),
                     present: attendanceData ? attendanceData.present === 1 : false,
-                    absent: isSunday ? true : !(attendanceData ? attendanceData.present === 1 : false),
+                    absent: attendanceData ? attendanceData.present !== 1 : false,
+                    holiday: isHoliday ? true : isSunday,
                 };
             });
 
@@ -463,11 +385,6 @@ const getAttendanceSheet = async (req, res, next) => {
         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
-const getDayName = (dayIndex) => {
-    const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    return daysOfWeek[dayIndex];
-};
-
 
 const getTodayAttendance = async (req, res, next) => {
     try {

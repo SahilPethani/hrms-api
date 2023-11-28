@@ -58,7 +58,6 @@ const loginUser = async (req, res, next) => {
     }
 
     const isPasswordValid = await user.comparePassword(password);
-    // const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (isPasswordValid) {
       const userWithoutPassword = { ...user.toObject() };
