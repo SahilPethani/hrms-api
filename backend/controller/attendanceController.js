@@ -471,10 +471,27 @@ const getDayName = (dayIndex) => {
 
 const getTodayAttendance = async (req, res, next) => {
     try {
+        const page = parseInt(req.query.page_no) || 1;
+        const perPage = parseInt(req.query.items_per_page) || 10;
+        const search_text = req.query.search_text || '';
+
         const currentDateIST = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
         const currentDate = new Date(currentDateIST).setHours(0, 0, 0, 0);
 
-        const employees = await Employee.find();
+        const skip = (page - 1) * perPage;
+
+        let query = {};
+        if (search_text) {
+            query.$or = [
+                { first_name: { $regex: new RegExp(search_text, 'i') } },
+                { last_name: { $regex: new RegExp(search_text, 'i') } }
+            ];
+        }
+
+        const employees = await Employee.find(query)
+            .skip(skip)
+            .limit(perPage);
+
         const todayAttendance = [];
 
         for (const employee of employees) {
@@ -521,7 +538,7 @@ const getTodayAttendance = async (req, res, next) => {
                         const breakEndTime = new Date(currentDate).setHours(13, 45, 0, 0); // 1:45 PM
 
                         const lastBreakPunchOut1 = employeeDetails.punches.filter(punch => punch.type === 'punchOut' && punch.punchOut >= breakStartTime)
-                   
+
                         if (lastBreakPunchOut1.length > 0) {
                             const breakPunches = employeeDetails.punches.filter(punch => {
                                 return punch.type === 'punchIn' && punch.punchIn >= breakEndTime
@@ -540,11 +557,24 @@ const getTodayAttendance = async (req, res, next) => {
             todayAttendance.push(employeeAttendance);
         }
 
+
+        const totalEmployees = await Employee.countDocuments({ /* Add your search criteria here */ });
+        const totalPages = Math.ceil(totalEmployees / perPage);
+
+        const pagination = {
+            total_items: totalEmployees,
+            total_pages: totalPages,
+            current_page_item: todayAttendance.length,
+            page_no: parseInt(page),
+            items_per_page: parseInt(perPage),
+        };
+
         return res.status(StatusCodes.OK).json({
             status: StatusCodes.OK,
             success: true,
             message: `Today's attendance details retrieved successfully`,
             data: todayAttendance,
+            pagination: pagination,
         });
     } catch (error) {
         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
