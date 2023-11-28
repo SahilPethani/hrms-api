@@ -17,7 +17,7 @@ const authenticateUser = async (req, res, next) => {
     req.user = { username, userId, role };
     next();
   } catch (error) {
-    return next(new ErrorHander("Invalid token", 401));
+    return next(new ErrorHander("Invalid token, Please Log-Out and Log-In again", 401));
   }
 };
 

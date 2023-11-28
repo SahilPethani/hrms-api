@@ -16,11 +16,8 @@ const calculateWorkingHours = (punches) => {
     for (let i = 0; i < punches.length; i += 2) {
         const punchInTime = punches[i].punchIn.getTime();
         const punchOutTime = punches[i + 1] && punches[i + 1].punchOut ? punches[i + 1].punchOut.getTime() : new Date().getTime();
-        console.log("🚀 ~ file: helper.js:17 ~ calculateWorkingHours ~ length: 1", punches[i + 1] && punches[i + 1].punchOut ? punches[i + 1].punchOut.getTime() : new Date().getTime())
         workingHours += (punchOutTime - punchInTime) / (1000 * 60 * 60);
     }
-
-    console.log("🚀 ~ file: helper.js:21 ~ calculateWorkingHours ~ workingHours: 123", workingHours)
 
     return workingHours;
 };

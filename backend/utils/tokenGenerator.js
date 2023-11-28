@@ -9,7 +9,7 @@ function generateToken(user) {
     role: user.role,
   };
 
-  return jwt.sign(payload, secret_key, { expiresIn: '10h' });
+  return jwt.sign(payload, secret_key, { expiresIn: '24h' });
 }
 
 // Verify a JWT token

@@ -20,11 +20,13 @@ const user = require("./routes/userRoute");
 const employee = require("./routes/employeeRoute");
 const dashbord = require("./routes/dashbordRoute");
 const attendance = require("./routes/attendanceRoute");
+const holiday = require("./routes/holidayRoute");
 
 app.use("/api/v1", user);
 app.use("/api/v1", dashbord);
 app.use("/api/v1", employee);
 app.use("/api/v1", attendance);
+app.use("/api/v1", holiday);
 
 app.get('/', (req, res) => {
   res.send('Hey, this is my API running 🥳');
