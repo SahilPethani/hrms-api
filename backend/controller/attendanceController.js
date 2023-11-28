@@ -358,7 +358,8 @@ const getAttendanceSheet = async (req, res, next) => {
                     date: currentDateInLoop.toLocaleString('en-US', istOptions),
                     dayName: getDayName(currentDateInLoop.getDay()),
                     present: attendanceData ? attendanceData.present === 1 : false,
-                    absent: attendanceData ? attendanceData.present !== 1 : false,
+                    absent: attendanceData ? attendanceData.present !== 1 : true,
+                    // absent:  isSunday ? true : !(attendanceData ? attendanceData.present === 1 : false),
                     holiday: isHoliday ? true : isSunday,
                 };
             });
