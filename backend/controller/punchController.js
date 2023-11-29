@@ -27,24 +27,11 @@ const punchIn = async (req, res, next) => {
             });
         }
 
-        // const hasPunchedInToday = employee.attendances.some((attendance) =>
-        //     attendance.date.toISOString() === new Date(currentDate).toISOString()
-        // );
-
-        // if (hasPunchedInToday) {
-        //     return next(new ErrorHandler(`Employee has already punched in today`, StatusCodes.BAD_REQUEST));
-        // }
-
-        // const currentTimeIST = new Date(currentDateIST).getHours() * 60 + new Date(currentDateIST).getMinutes();
-        // const punchInTimeLimit = 9 * 60;
-        // if (currentTimeIST < punchInTimeLimit) {
-        //     return next(new ErrorHandler(`Punch-in allowed only before 9:00 AM IST`, StatusCodes.BAD_REQUEST));
-        // }
-
         let todayAttendance = await Attendance.findOne({
             date: currentDate,
             "attendanceDetails.employeeId": employee._id,
         });
+        console.log("🚀 ~ file: punchController.js:34 ~ punchIn ~ todayAttendance:", todayAttendance)
 
         if (!todayAttendance) {
             todayAttendance = await Attendance.findOneAndUpdate(
@@ -78,11 +65,6 @@ const punchIn = async (req, res, next) => {
         }
 
         await todayAttendance.save();
-        // const attendanceData = {
-        //     date: todayAttendance.date,
-        //     present: todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].present,
-        //     punches: todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches,
-        // };
 
         const existingAttendanceIndex = employee.attendances.findIndex(
             (attendance) => attendance.date.toISOString() === todayAttendance.date.toISOString()
@@ -105,7 +87,7 @@ const punchIn = async (req, res, next) => {
             status: StatusCodes.OK,
             success: true,
             message: `Employee punched in successfully`,
-            data: todayAttendance
+            date: currentDateIST
         });
     } catch (error) {
         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
@@ -121,16 +103,17 @@ const punchOut = async (req, res, next) => {
         if (!employee) {
             return next(new ErrorHandler(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
         }
-
-        const currentDate = new Date().setHours(0, 0, 0, 0);
+        const currentDateIST = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+        const currentDate = new Date(currentDateIST).setHours(0, 0, 0, 0);
 
         let todayAttendance = await Attendance.findOne({
             date: currentDate,
             "attendanceDetails.employeeId": employee._id,
         });
 
+
         if (!todayAttendance) {
-            return next(new ErrorHandler(`Employee has not punched in today`, StatusCodes.BAD_REQUEST));
+            return next(new ErrorHandler(`Employee has not punched-in today`, StatusCodes.BAD_REQUEST));
         }
 
         const hasPunchIn = todayAttendance.attendanceDetails[0].punches.some(punch => punch.type === 'punchIn');
@@ -177,6 +160,7 @@ const punchOut = async (req, res, next) => {
             status: StatusCodes.OK,
             success: true,
             message: `Employee punched out successfully`,
+            date: currentDateIST
         });
     } catch (error) {
         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
