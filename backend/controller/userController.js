@@ -3,6 +3,7 @@ const { StatusCodes } = require("http-status-codes");
 const { generateToken } = require("../utils/tokenGenerator");
 const ErrorHander = require("../middleware/errorhander");
 const FileUplaodToFirebase = require("../middleware/multerConfig");
+const employeeModel = require("../models/employeeModel");
 
 const registerUser = async (req, res, next) => {
   try {
@@ -58,16 +59,23 @@ const loginUser = async (req, res, next) => {
     }
 
     const isPasswordValid = await user.comparePassword(password);
+    const employeeData = await employeeModel.findOne({
+      user_id: user_id
+    })
 
     if (isPasswordValid) {
       const userWithoutPassword = { ...user.toObject() };
       delete userWithoutPassword.password;
+
+      const employee = { ...employeeData.toObject() }
+      delete employee.attendances
 
       const token = generateToken(user);
       return res.status(StatusCodes.OK).json({
         status: StatusCodes.OK,
         message: `${user.role} logged in successfully`,
         user: userWithoutPassword,
+        employeeData: employee,
         Token: token
       });
     } else {
