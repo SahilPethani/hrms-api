@@ -10,6 +10,10 @@ const addHoliday = async (req, res, next) => {
         if (!holiday_no || !holiday_name || !holiday_date) {
             return next(new ErrorHander("Holiday number, name, and date are required", StatusCodes.BAD_REQUEST));
         }
+        const isSunday = new Date(holiday_date).getDay() === 0;
+        if (isSunday) {
+            return next(new ErrorHander("Holidays cannot be added on Sundays", StatusCodes.BAD_REQUEST));
+        }
 
         const holiday = new Holiday({
             holiday_no,
@@ -17,9 +21,7 @@ const addHoliday = async (req, res, next) => {
             holiday_date,
             detail,
         });
-
         const savedHoliday = await holiday.save();
-
         return res.status(StatusCodes.CREATED).json({
             status: StatusCodes.CREATED,
             success: true,
@@ -31,30 +33,27 @@ const addHoliday = async (req, res, next) => {
     }
 };
 
+
 const getAllHolidays = async (req, res, next) => {
     try {
         const page = parseInt(req.query.page_no) || 1;
         const perPage = parseInt(req.query.items_per_page) || 10;
         const search_text = req.query.search_text || '';
-
         const query = search_text
             ? {
                 $or: [
                     { holiday_no: { $regex: search_text, $options: 'i' } },
                     { holiday_name: { $regex: search_text, $options: 'i' } },
-                    // Add more fields to search as needed
                 ],
             }
             : {};
 
         const skip = (page - 1) * perPage;
-
         const holidays = await Holiday.find(query)
             .skip(skip)
             .limit(perPage);
 
         const totalHolidays = await Holiday.countDocuments(query);
-
         const totalPages = Math.ceil(totalHolidays / perPage);
 
         return res.status(StatusCodes.OK).json({
@@ -105,6 +104,11 @@ const updateHoliday = async (req, res, next) => {
             holiday_date,
             detail,
         };
+
+        const isSunday = new Date(holiday_date).getDay() === 0;
+        if (isSunday) {
+            return next(new ErrorHander("Holidays cannot be update on Sundays", StatusCodes.BAD_REQUEST));
+        }
 
         const updatedHoliday = await Holiday.findByIdAndUpdate(
             holidayId,

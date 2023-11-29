@@ -2,166 +2,8 @@ const { StatusCodes } = require("http-status-codes");
 const ErrorHandler = require("../middleware/errorhander");
 const Employee = require("../models/employeeModel");
 const Attendance = require("../models/attendanceModel");
-const { calculateWorkingHours, getDayName } = require("../utils/helper");
+const { calculateWorkingHours, getDayName, formatTotalWorkingHours } = require("../utils/helper");
 const Holiday = require("../models/holidayModel");
-
-const punchIn = async (req, res, next) => {
-    try {
-        const employeeId = req.params.id;
-        const note = req.body.note;
-
-        let employee = await Employee.findById(employeeId);
-        if (!employee) {
-            return next(new ErrorHandler(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
-        }
-
-        const currentDateIST = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
-        const currentDate = new Date(currentDateIST).setHours(0, 0, 0, 0);
-        const isHoliday = await Holiday.exists({ holiday_date: new Date(currentDate) });
-
-        if (isHoliday) {
-            return res.status(StatusCodes.OK).json({
-                status: StatusCodes.OK,
-                success: true,
-                message: `It's a holiday. Employees don't need to punch in.`,
-            });
-        }
-
-        // const hasPunchedInToday = employee.attendances.some((attendance) =>
-        //     attendance.date.toISOString() === new Date(currentDate).toISOString()
-        // );
-
-        // if (hasPunchedInToday) {
-        //     return next(new ErrorHandler(`Employee has already punched in today`, StatusCodes.BAD_REQUEST));
-        // }
-
-        // const currentTimeIST = new Date(currentDateIST).getHours() * 60 + new Date(currentDateIST).getMinutes();
-        // const punchInTimeLimit = 9 * 60;
-        // if (currentTimeIST < punchInTimeLimit) {
-        //     return next(new ErrorHandler(`Punch-in allowed only before 9:00 AM IST`, StatusCodes.BAD_REQUEST));
-        // }
-
-        let todayAttendance = await Attendance.findOne({
-            date: currentDate,
-            "attendanceDetails.employeeId": employee._id,
-        });
-
-        if (!todayAttendance) {
-            todayAttendance = await Attendance.findOneAndUpdate(
-                { date: currentDate },
-                {
-                    $addToSet: {
-                        attendanceDetails: {
-                            employeeId: employee._id,
-                            present: 1,
-                            punches: [],
-                        },
-                    },
-                },
-                { upsert: true, new: true }
-            );
-        }
-
-        const punchInDetails = {
-            type: "punchIn",
-            punchIn: new Date(),
-            note: note,
-        };
-
-        const employeeAttendanceDetailsIndex = todayAttendance.attendanceDetails.findIndex(
-            (detail) => detail.employeeId.equals(employee._id)
-        );
-
-        if (employeeAttendanceDetailsIndex !== -1) {
-            todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches.push(punchInDetails);
-            todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].present = 1;
-        }
-
-        await todayAttendance.save();
-        const attendanceData = {
-            date: todayAttendance.date,
-            present: todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].present,
-            punches: todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches,
-        };
-        employee.attendances.push(attendanceData);
-
-        await employee.save();
-
-        return res.status(StatusCodes.OK).json({
-            status: StatusCodes.OK,
-            success: true,
-            message: `Employee punched in successfully`,
-            data: todayAttendance
-        });
-    } catch (error) {
-        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
-    }
-};
-
-const punchOut = async (req, res, next) => {
-    try {
-        const employeeId = req.params.id;
-        const note = req.body.note;
-
-        let employee = await Employee.findById(employeeId);
-        if (!employee) {
-            return next(new ErrorHandler(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
-        }
-
-        const currentDate = new Date().setHours(0, 0, 0, 0);
-
-        let todayAttendance = await Attendance.findOne({
-            date: currentDate,
-            "attendanceDetails.employeeId": employee._id,
-        });
-
-        if (!todayAttendance) {
-            return next(new ErrorHandler(`Employee has not punched in today`, StatusCodes.BAD_REQUEST));
-        }
-
-        const punchOutDetails = {
-            type: "punchOut",
-            punchOut: new Date(),
-            note: note,
-        };
-
-        const employeeAttendanceDetailsIndex = todayAttendance.attendanceDetails.findIndex(
-            (detail) => detail.employeeId.equals(employee._id)
-        );
-
-        if (employeeAttendanceDetailsIndex !== -1) {
-            todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches.push(punchOutDetails);
-            // todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].present = 0;
-        }
-
-        await todayAttendance.save();
-
-        const existingAttendanceIndex = employee.attendances.findIndex(
-            (attendance) => attendance.date.toISOString() === todayAttendance.date.toISOString()
-        );
-
-        if (existingAttendanceIndex !== -1) {
-            employee.attendances[existingAttendanceIndex].punches = todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches;
-        } else {
-            const attendanceData = {
-                date: todayAttendance.date,
-                present: todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].present,
-                punches: todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches,
-            };
-            employee.attendances.push(attendanceData);
-        }
-
-        await employee.save();
-
-        return res.status(StatusCodes.OK).json({
-            status: StatusCodes.OK,
-            success: true,
-            message: `Employee punched out successfully`,
-        });
-    } catch (error) {
-        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
-    }
-};
 
 const getAttendanceDetails = async (req, res, next) => {
     try {
@@ -174,6 +16,9 @@ const getAttendanceDetails = async (req, res, next) => {
 
         const monthlyAttendanceDetails = [];
 
+        const currentDateIST = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+        const currentDate = new Date(currentDateIST).setHours(0, 0, 0, 0);
+
         employee.attendances.forEach(attendanceRecord => {
             const date = attendanceRecord.date.toISOString().split('T')[0];
             const punches = attendanceRecord.punches;
@@ -182,8 +27,10 @@ const getAttendanceDetails = async (req, res, next) => {
                 date,
                 checkInTime: null,
                 checkOutTime: null,
+                breakTime: 0,
                 totalWorkingHours: 0,
                 present: false,
+                overtime: 0
             };
 
             if (punches.length > 0) {
@@ -195,9 +42,35 @@ const getAttendanceDetails = async (req, res, next) => {
 
                 if (lastPunch) {
                     const totalHours = calculateWorkingHours(punches);
-                    attendanceDetail.totalWorkingHours = totalHours.toFixed(2);
-                }
+                    attendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHours);
 
+                    // attendanceDetail.totalWorkingHours = totalHours.toFixed(2);
+
+                    const overtimeStartTime = new Date(attendanceRecord.date).setHours(18, 30, 0, 0); // 6:30 PM
+                    const lastPunchOut = new Date(attendanceRecord.date).getTime();
+
+                    if (lastPunchOut > overtimeStartTime) {
+                        const overtimeMinutes = (lastPunchOut - overtimeStartTime) / (1000 * 60);
+                        attendanceDetail.overtime = formatTotalWorkingHours(overtimeMinutes / 60); // Convert minutes to hours
+                    }
+                }
+                if (punches.length > 0) {
+                    const breakStartTime = new Date(attendanceRecord.date).setHours(13, 0, 0, 0); // 1:00 PM
+                    const breakEndTime = new Date(attendanceRecord.date).setHours(13, 45, 0, 0); // 1:45 PM
+
+                    const lastBreakPunchOut1 = punches.filter(punch => punch.type === 'punchOut' && punch.punchOut >= breakStartTime)
+
+                    if (lastBreakPunchOut1.length > 0) {
+                        const breakPunches = punches.filter(punch => {
+                            return punch.type === 'punchIn' && punch.punchIn >= breakEndTime
+                        });
+                        if (lastBreakPunchOut1[0].punchOut) {
+                            const breakMinutes = (new Date(breakPunches[0].punchIn - new Date(lastBreakPunchOut1[0].punchOut).getTime()).getTime()) / (1000 * 60);
+
+                            attendanceDetail.breakTime = breakMinutes.toFixed(2);
+                        }
+                    }
+                }
                 attendanceDetail.present = true;
             }
 
@@ -212,7 +85,6 @@ const getAttendanceDetails = async (req, res, next) => {
         const averageWorkingHours = (totalWorkingHours / monthlyAttendanceDetails.length).toFixed(2);
         const averageInTime = new Date(totalCheckInTime / monthlyAttendanceDetails.length).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
         const averageOutTime = new Date(totalCheckOutTime / monthlyAttendanceDetails.length).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
-
 
         return res.status(StatusCodes.OK).json({
             status: StatusCodes.OK,
@@ -359,7 +231,7 @@ const getAttendanceSheet = async (req, res, next) => {
                     dayName: getDayName(currentDateInLoop.getDay()),
                     present: attendanceData ? attendanceData.present === 1 : false,
                     // absent: attendanceData ? attendanceData.present !== 1 : true,
-                    absent:  isSunday ? false : !(attendanceData ? attendanceData.present === 1 : false),
+                    absent: isSunday ? false : !(attendanceData ? attendanceData.present === 1 : false),
                     holiday: isHoliday ? true : isSunday,
                 };
             });
@@ -447,7 +319,8 @@ const getTodayAttendance = async (req, res, next) => {
                     // Calculate total working hours
                     if (lastPunch) {
                         const totalHours = calculateWorkingHours(employeeDetails.punches);
-                        employeeAttendance.totalWorkingHours = totalHours.toFixed(2);
+                        // employeeAttendance.totalWorkingHours = totalHours.toFixed(2);
+                        employeeAttendance.totalWorkingHours = formatTotalWorkingHours(totalHours);
                     }
 
                     // Calculate break time
@@ -499,11 +372,124 @@ const getTodayAttendance = async (req, res, next) => {
     }
 };
 
+const getEmployeePunchesToday = async (req, res, next) => {
+    try {
+        const employeeId = req.params.id;
+        const currentDateIST = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+        const currentDate = new Date(currentDateIST).setHours(0, 0, 0, 0);
+
+        const todayAttendance = await Attendance.findOne({
+            date: currentDate,
+            "attendanceDetails.employeeId": employeeId,
+        });
+
+        if (!todayAttendance) {
+            return res.status(StatusCodes.OK).json({
+                status: StatusCodes.OK,
+                success: true,
+                message: "No punches found for the employee today",
+                data: {
+                    employeeId,
+                    punches: [],
+                },
+            });
+        }
+
+        const employeeAttendanceDetailsIndex = todayAttendance.attendanceDetails.findIndex(
+            (detail) => detail.employeeId.equals(employeeId)
+        );
+
+        if (employeeAttendanceDetailsIndex !== -1) {
+            const employeeDetails = todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex];
+
+            // Additional calculations
+            let checkInTime = '00:00';
+            let checkOutTime = '00:00';
+            let breakTime = '00:00';
+            let totalWorkingHours = 0;
+            let overtime = '00:00'; // Initialize overtime to 0
+
+            if (employeeDetails.punches.length > 0) {
+                const firstPunch = new Date(employeeDetails.punches[0].punchIn).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
+                const lastPunch = employeeDetails.punches.slice(-1)[0].punchOut || null;
+
+                checkInTime = firstPunch;
+                checkOutTime = lastPunch ? new Date(lastPunch).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' }) : '00:00';
+
+                // Calculate total working hours
+                if (lastPunch) {
+                    const totalHours = calculateWorkingHours(employeeDetails.punches);
+                    totalWorkingHours = formatTotalWorkingHours(totalHours);
+
+                    const overtimeStartTime = new Date(currentDate).setHours(18, 30, 0, 0); // 6:30 PM
+                    const lastPunchOut = new Date(lastPunch).getTime();
+
+                    if (lastPunchOut > overtimeStartTime) {
+                        const overtimeMinutes = (lastPunchOut - overtimeStartTime) / (1000 * 60);
+                        overtime = formatTotalWorkingHours(overtimeMinutes / 60); // Convert minutes to hours
+                    }
+                }
+
+                // Calculate break time
+                if (employeeDetails.punches.length > 0) {
+                    const breakStartTime = new Date(currentDate).setHours(13, 0, 0, 0); // 1:00 PM
+                    const breakEndTime = new Date(currentDate).setHours(13, 45, 0, 0); // 1:45 PM
+
+                    const lastBreakPunchOut1 = employeeDetails.punches.filter(punch => punch.type === 'punchOut' && punch.punchOut >= breakStartTime);
+
+                    if (lastBreakPunchOut1.length > 0) {
+                        const breakPunches = employeeDetails.punches.filter(punch => punch.type === 'punchIn' && punch.punchIn >= breakEndTime);
+                        if (lastBreakPunchOut1[0].punchOut) {
+                            const breakMinutes = (new Date(breakPunches[0].punchIn - new Date(lastBreakPunchOut1[0].punchOut).getTime()).getTime()) / (1000 * 60);
+                            breakTime = breakMinutes.toFixed(2);
+                        }
+                    }
+                }
+            }
+
+            const punchesToday = employeeDetails.punches.map((punch) => {
+                return {
+                    type: punch.type,
+                    punchIn: punch.punchIn,
+                    punchOut: punch.punchOut,
+                    note: punch.note,
+                    checkInTime: punch.checkInTime || checkInTime,
+                    checkOutTime: punch.checkOutTime || checkOutTime,
+                    breakTime: punch.breakTime || breakTime,
+                    totalWorkingHours: punch.totalWorkingHours || totalWorkingHours,
+                };
+            });
+
+            return res.status(StatusCodes.OK).json({
+                status: StatusCodes.OK,
+                success: true,
+                message: `Punches for the employee today`,
+                data: {
+                    employeeId,
+                    punches: punchesToday,
+                },
+            });
+        } else {
+            return res.status(StatusCodes.OK).json({
+                status: StatusCodes.OK,
+                success: true,
+                message: "No punches found for the employee today",
+                data: {
+                    employeeId,
+                    punches: [],
+                },
+            });
+        }
+    } catch (error) {
+        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
+    }
+};
+
+
 module.exports = {
-    punchIn,
-    punchOut,
     getAttendanceDetails,
     getEmployeeAttendanceSummary,
     getAttendanceSheet,
-    getTodayAttendance
+    getTodayAttendance,
+    getEmployeePunchesToday
 };

@@ -90,7 +90,6 @@ const addEmployee = async (req, res, next) => {
     }
 }
 
-
 const getAllEmployees = async (req, res, next) => {
     try {
         const page = parseInt(req.query.page_no) || 1;
@@ -145,7 +144,6 @@ const getEmployeeById = async (req, res, next) => {
         return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
-
 
 const updateEmployee = async (req, res, next) => {
     try {

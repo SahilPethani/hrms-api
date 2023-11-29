@@ -42,11 +42,22 @@ const getDayName = (dayIndex) => {
     return daysOfWeek[dayIndex];
 };
 
+const formatTotalWorkingHours = (totalHours) => {
+    const hours = Math.floor(totalHours);
+    const minutes = Math.round((totalHours - hours) * 60);
+
+    const formattedHours = hours.toString().padStart(2, '0');
+    const formattedMinutes = minutes.toString().padStart(2, '0');
+
+    return `${formattedHours}h:${formattedMinutes}m`;
+};
+
 module.exports = {
     generateUniqueUserId,
     calculateWorkingHours,
     calculateOvertime,
     calculateProductivity,
     calculateWorkingHours,
-    getDayName
+    getDayName,
+    formatTotalWorkingHours
 };
