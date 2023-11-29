@@ -59,23 +59,21 @@ const loginUser = async (req, res, next) => {
     }
 
     const isPasswordValid = await user.comparePassword(password);
-    const employeeData = await employeeModel.findOne({
-      user_id: user_id
-    })
+    const employeeData = await employeeModel.findOne(
+      { user_id: user_id },
+      { _id: 1, user_id: 1, first_name: 1, last_name: 1, designation: 1, /* Add other fields you want to include */ }
+    );
 
     if (isPasswordValid) {
       const userWithoutPassword = { ...user.toObject() };
       delete userWithoutPassword.password;
-
-      const employee = { ...employeeData.toObject() }
-      delete employee.attendances
 
       const token = generateToken(user);
       return res.status(StatusCodes.OK).json({
         status: StatusCodes.OK,
         message: `${user.role} logged in successfully`,
         user: userWithoutPassword,
-        employeeData: employee,
+        employeeData: employeeData ? employeeData : "",
         Token: token
       });
     } else {
