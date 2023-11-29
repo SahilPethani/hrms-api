@@ -399,15 +399,18 @@ const getEmployeePunchesToday = async (req, res, next) => {
             (detail) => detail.employeeId.equals(employeeId)
         );
 
+        let checkInTime = '00:00';
+        let checkOutTime = '00:00';
+        let breakTime = '00:00';
+        let totalWorkingHours = 0;
+        let overtime = '00:00';
+
         if (employeeAttendanceDetailsIndex !== -1) {
             const employeeDetails = todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex];
+            console.log("🚀 ~ file: attendanceController.js:410 ~ getEmployeePunchesToday ~ employeeDetails:", employeeDetails)
 
             // Additional calculations
-            let checkInTime = '00:00';
-            let checkOutTime = '00:00';
-            let breakTime = '00:00';
-            let totalWorkingHours = 0;
-            let overtime = '00:00'; // Initialize overtime to 0
+            // Initialize overtime to 0
 
             if (employeeDetails.punches.length > 0) {
                 const firstPunch = new Date(employeeDetails.punches[0].punchIn).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });

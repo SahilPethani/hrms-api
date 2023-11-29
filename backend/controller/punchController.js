@@ -78,12 +78,26 @@ const punchIn = async (req, res, next) => {
         }
 
         await todayAttendance.save();
-        const attendanceData = {
-            date: todayAttendance.date,
-            present: todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].present,
-            punches: todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches,
-        };
-        employee.attendances.push(attendanceData);
+        // const attendanceData = {
+        //     date: todayAttendance.date,
+        //     present: todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].present,
+        //     punches: todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches,
+        // };
+
+        const existingAttendanceIndex = employee.attendances.findIndex(
+            (attendance) => attendance.date.toISOString() === todayAttendance.date.toISOString()
+        );
+
+        if (existingAttendanceIndex !== -1) {
+            employee.attendances[existingAttendanceIndex].punches = todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches;
+        } else {
+            const attendanceData = {
+                date: todayAttendance.date,
+                present: todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].present,
+                punches: todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches,
+            };
+            employee.attendances.push(attendanceData);
+        }
 
         await employee.save();
 
