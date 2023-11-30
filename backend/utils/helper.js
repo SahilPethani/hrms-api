@@ -52,6 +52,16 @@ const formatTotalWorkingHours = (totalHours) => {
     return `${formattedHours}h:${formattedMinutes}m`;
 };
 
+const formatMinutesToTime = (minutes) => {
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+
+    const formattedHours = hours.toString().padStart(2, '0');
+    const formattedMinutes = remainingMinutes.toString().padStart(2, '0');
+    
+    return `${formattedHours}h:${formattedMinutes}m`;
+};
+
 module.exports = {
     generateUniqueUserId,
     calculateWorkingHours,
@@ -59,5 +69,6 @@ module.exports = {
     calculateProductivity,
     calculateWorkingHours,
     getDayName,
-    formatTotalWorkingHours
+    formatTotalWorkingHours,
+    formatMinutesToTime
 };

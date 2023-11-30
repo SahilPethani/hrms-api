@@ -19,7 +19,7 @@ const authenticateUser = async (req, res, next) => {
   } catch (error) {
     return next(new ErrorHander("Invalid token, Please Log-Out and Log-In again", 401));
   }
-};
+}; 
 
 const authorizePermission = (...roles) => {
   return (req, res, next) => {
