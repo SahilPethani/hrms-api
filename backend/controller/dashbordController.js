@@ -5,7 +5,9 @@ const Attendance = require("../models/attendanceModel");
 
 const getEmployeeCounts = async (req, res, next) => {
     try {
-        const currentDate = new Date().toISOString().split('T')[0];
+        // const currentDate = new Date().toISOString().split('T')[0];
+        const currentDateIST = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+        const currentDate = new Date(currentDateIST).setHours(0, 0, 0, 0);
 
         const totalEmployees = await Employee.countDocuments();
         const createUser_employee = await Employee.countDocuments({ create_user: 1 });

@@ -2,7 +2,7 @@ const { StatusCodes } = require("http-status-codes");
 const ErrorHandler = require("../middleware/errorhander");
 const Employee = require("../models/employeeModel");
 const Attendance = require("../models/attendanceModel");
-const { calculateWorkingHours, getDayName, formatTotalWorkingHours, formatMinutesToTime } = require("../utils/helper");
+const { calculateWorkingHours, getDayName, formatTotalWorkingHours, formatMinutesToTime, getEmployeeAttendanceStatistics } = require("../utils/helper");
 const Holiday = require("../models/holidayModel");
 
 const getAttendanceDetails = async (req, res, next) => {
@@ -30,7 +30,6 @@ const getAttendanceDetails = async (req, res, next) => {
             };
 
             if (punches.length > 0) {
-
                 const firstPunch = new Date(punches[0]?.punchIn);
                 const lastPunch = punches.slice(-1)[0].punchOut || null;
                 const lastPunchTime = lastPunch ? new Date(lastPunch) : null;
@@ -41,38 +40,22 @@ const getAttendanceDetails = async (req, res, next) => {
                 if (lastPunchTime) {
                     const totalHours = (lastPunchTime - firstPunch) / (1000 * 60 * 60);
                     attendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHours);
-            
+
                     const overtimeStartTime = new Date(attendanceRecord.date).setHours(18, 30, 0, 0); // 6:30 PM
                     const lastPunchOut = lastPunchTime.getTime();
-            
+
                     if (lastPunchOut > overtimeStartTime) {
                         const overtimeMinutes = (lastPunchOut - overtimeStartTime) / (1000 * 60);
                         attendanceDetail.overtime = formatTotalWorkingHours(overtimeMinutes / 60); // Convert minutes to hours
                     }
                 }
-                // if (lastPunch) {
-                //     const totalHours = calculateWorkingHours(punches);
-                //     attendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHours);
-
-                //     // attendanceDetail.totalWorkingHours = totalHours.toFixed(2);
-
-                //     const overtimeStartTime = new Date(attendanceRecord.date).setHours(18, 30, 0, 0); // 6:30 PM
-                //     const lastPunchOut = new Date(attendanceRecord.date).getTime();
-
-                //     if (lastPunchOut > overtimeStartTime) {
-                //         const overtimeMinutes = (lastPunchOut - overtimeStartTime) / (1000 * 60);
-                //         attendanceDetail.overtime = formatTotalWorkingHours(overtimeMinutes / 60);
-                //     }
-                // }
 
                 if (punches.length > 0) {
                     const breakStartTime = new Date(attendanceRecord.date).setHours(13, 0, 0, 0); // 1:00 PM
-                    console.log("🚀 ~ file: attendanceController.js:70 ~ getAttendanceDetails ~ breakStartTime:", breakStartTime)
                     const breakEndTime = new Date(attendanceRecord.date).setHours(13, 45, 0, 0); // 1:45 PM
-                    console.log("🚀 ~ file: attendanceController.js:72 ~ getAttendanceDetails ~ breakEndTime:", breakEndTime)
-                
+
                     const lastBreakPunchOut1 = punches.filter(punch => punch.type === 'punchOut' && punch.punchOut >= breakStartTime);
-                
+
                     if (lastBreakPunchOut1.length > 0) {
                         const breakPunches = punches.filter(punch => punch.type === 'punchIn' && punch.punchIn >= breakEndTime);
                         if (lastBreakPunchOut1[0]?.punchOut && breakPunches[0]?.punchIn) {
@@ -81,32 +64,11 @@ const getAttendanceDetails = async (req, res, next) => {
                         }
                     }
                 }
-
-                // if (punches.length > 0) {
-                //     const breakStartTime = new Date(attendanceRecord.date).setHours(12, 45, 0, 0); // 1:00 PM
-                //     const breakEndTime = new Date(attendanceRecord.date).setHours(13, 45, 0, 0); // 1:45 PM
-
-                //     const lastBreakPunchOut1 = punches.filter(punch => punch.type === 'punchOut' && punch.punchOut >= breakStartTime)
-
-                //     if (lastBreakPunchOut1.length > 0) {
-                //         const breakPunches = punches.filter(punch => {
-                //             return punch.type === 'punchIn' && punch?.punchIn >= breakEndTime
-                //         });
-                //         if (lastBreakPunchOut1[0]?.punchOut && lastBreakPunchOut1[0]?.punchOut) {
-                //             const breakMinutes = (new Date(breakPunches[0]?.punchIn).getTime() - new Date(lastBreakPunchOut1[0].punchOut).getTime()) / (1000 * 60);
-                //             console.log("🚀 ~ file: attendanceController.js:65 ~ getAttendanceDetails ~ breakMinutes:", breakMinutes)
-
-                //             attendanceDetail.breakTime = breakMinutes.toFixed(2);
-                //         }
-                //     }
-                // }
                 attendanceDetail.present = true;
             }
-
             monthlyAttendanceDetails.push(attendanceDetail);
         });
 
-        // Calculate Average Working Hours, Average In Time, and Average Out Time
         const totalWorkingHours = monthlyAttendanceDetails.reduce((sum, attendance) => sum + parseFloat(attendance.totalWorkingHours), 0);
         const totalCheckInTime = monthlyAttendanceDetails.reduce((sum, attendance) => sum + (attendance.checkInTime ? new Date(`2000-01-01 ${attendance.checkInTime}`).getTime() : 0), 0);
         const totalCheckOutTime = monthlyAttendanceDetails.reduce((sum, attendance) => sum + (attendance.checkOutTime ? new Date(`2000-01-01 ${attendance.checkOutTime}`).getTime() : 0), 0);
@@ -323,7 +285,7 @@ const getTodayAttendance = async (req, res, next) => {
                 designation: employee.designation,
                 checkInTime: '00:00',
                 checkOutTime: '00:00',
-                breakTime: '00:00', 
+                breakTime: '00:00',
                 totalWorkingHours: 0,
                 present: false,
             };
@@ -341,11 +303,11 @@ const getTodayAttendance = async (req, res, next) => {
                     const firstPunch = new Date(employeeDetails.punches[0]?.punchIn);
                     const lastPunch = employeeDetails.punches.slice(-1)[0].punchOut || null;
                     const lastPunchTime = lastPunch ? new Date(lastPunch) : null;
-    
+
                     employeeAttendance.checkInTime = firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
                     employeeAttendance.checkOutTime = lastPunchTime ? lastPunchTime.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' }) : '00:00';
 
-                    
+
                     // const firstPunch = employeeDetails.punches[0].punchIn;
                     // const lastPunch = employeeDetails.punches.slice(-1)[0].punchOut || null;
 
@@ -367,9 +329,9 @@ const getTodayAttendance = async (req, res, next) => {
                     if (employeeDetails.punches.length > 0) {
                         const breakStartTime = new Date(currentDate).setHours(13, 0, 0, 0); // 1:00 PM
                         const breakEndTime = new Date(currentDate).setHours(13, 45, 0, 0); // 1:45 PM
-                    
+
                         const lastBreakPunchOut1 = employeeDetails.punches.filter(punch => punch.type === 'punchOut' && punch.punchOut >= breakStartTime);
-                    
+
                         if (lastBreakPunchOut1.length > 0) {
                             const breakPunches = employeeDetails.punches.filter(punch => punch.type === 'punchIn' && punch.punchIn >= breakEndTime);
                             if (lastBreakPunchOut1[0]?.punchOut && breakPunches[0]?.punchIn) {
@@ -468,10 +430,10 @@ const getEmployeePunchesToday = async (req, res, next) => {
                 if (lastPunchTime) {
                     const totalHours = (lastPunchTime - firstPunch) / (1000 * 60 * 60);
                     totalWorkingHours = formatTotalWorkingHours(totalHours);
-            
+
                     const overtimeStartTime = new Date(currentDate).setHours(18, 30, 0, 0); // 6:30 PM
                     const lastPunchOut = lastPunchTime.getTime();
-            
+
                     if (lastPunchOut > overtimeStartTime) {
                         const overtimeMinutes = (lastPunchOut - overtimeStartTime) / (1000 * 60);
                         overtime = formatTotalWorkingHours(overtimeMinutes / 60); // Convert minutes to hours
@@ -482,9 +444,9 @@ const getEmployeePunchesToday = async (req, res, next) => {
                 if (FindAttendes.punches.length > 0) {
                     const breakStartTime = new Date(currentDate).setHours(13, 0, 0, 0); // 1:00 PM
                     const breakEndTime = new Date(currentDate).setHours(13, 45, 0, 0); // 1:45 PM
-                
+
                     const lastBreakPunchOut1 = FindAttendes.punches.filter(punch => punch.type === 'punchOut' && punch.punchOut >= breakStartTime);
-                
+
                     if (lastBreakPunchOut1.length > 0) {
                         const breakPunches = FindAttendes.punches.filter(punch => punch.type === 'punchIn' && punch.punchIn >= breakEndTime);
                         if (lastBreakPunchOut1[0]?.punchOut && breakPunches[0]?.punchIn) {
@@ -494,6 +456,7 @@ const getEmployeePunchesToday = async (req, res, next) => {
                     }
                 }
             }
+            const attendanceStatistics = await getEmployeeAttendanceStatistics(employeeId);
 
             return res.status(StatusCodes.OK).json({
                 status: StatusCodes.OK,
@@ -506,6 +469,7 @@ const getEmployeePunchesToday = async (req, res, next) => {
                     breakTime: breakTime,
                     totalWorkingHours: totalWorkingHours,
                     today_activity: FindAttendes,
+                    attendanceStatistics: attendanceStatistics,
                 },
             });
         } else {
