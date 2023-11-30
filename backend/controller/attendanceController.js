@@ -67,7 +67,9 @@ const getAttendanceDetails = async (req, res, next) => {
 
                 if (punches.length > 0) {
                     const breakStartTime = new Date(attendanceRecord.date).setHours(13, 0, 0, 0); // 1:00 PM
+                    console.log("🚀 ~ file: attendanceController.js:70 ~ getAttendanceDetails ~ breakStartTime:", breakStartTime)
                     const breakEndTime = new Date(attendanceRecord.date).setHours(13, 45, 0, 0); // 1:45 PM
+                    console.log("🚀 ~ file: attendanceController.js:72 ~ getAttendanceDetails ~ breakEndTime:", breakEndTime)
                 
                     const lastBreakPunchOut1 = punches.filter(punch => punch.type === 'punchOut' && punch.punchOut >= breakStartTime);
                 
