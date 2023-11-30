@@ -422,7 +422,7 @@ const getEmployeePunchesToday = async (req, res, next) => {
 
                 // Calculate break time
                 if (FindAttendes.punches.length > 0) {
-                    const breakStartTime = new Date(currentDate).setHours(12, 45, 0, 0); // 1:00 PM
+                    const breakStartTime = new Date(currentDate).setHours(13, 0, 0, 0); // 1:00 PM
                     const breakEndTime = new Date(currentDate).setHours(13, 45, 0, 0); // 1:45 PM
 
                     const lastBreakPunchOut1 = FindAttendes.punches.filter(punch => punch.type === 'punchOut' && punch.punchOut >= breakStartTime)
