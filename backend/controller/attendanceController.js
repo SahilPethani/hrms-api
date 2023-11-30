@@ -51,7 +51,7 @@ const getAttendanceDetails = async (req, res, next) => {
                     }
                 }
                 if (punches.length > 0) {
-                    const breakStartTime = new Date(attendanceRecord.date).setHours(13, 0, 0, 0); // 1:00 PM
+                    const breakStartTime = new Date(attendanceRecord.date).setHours(12, 45, 0, 0); // 1:00 PM
                     const breakEndTime = new Date(attendanceRecord.date).setHours(13, 45, 0, 0); // 1:45 PM
 
                     const lastBreakPunchOut1 = punches.filter(punch => punch.type === 'punchOut' && punch.punchOut >= breakStartTime)
@@ -400,7 +400,7 @@ const getEmployeePunchesToday = async (req, res, next) => {
 
         if (FindAttendes) {
             if (FindAttendes.punches.length > 0) {
-                const firstPunch = new Date(FindAttendes.punches[0].punchIn).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
+                const firstPunch = new Date(FindAttendes.punches[0]?.punchIn).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
                 const lastPunch = FindAttendes.punches.slice(-1)[0].punchOut || null;
 
                 checkInTime = firstPunch;
