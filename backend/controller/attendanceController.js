@@ -317,7 +317,6 @@ const getTodayAttendance = async (req, res, next) => {
                     // Calculate total working hours
                     if (lastPunch) {
                         const totalHours = calculateWorkingHours(employeeDetails.punches);
-                        console.log("🚀 ~ file: attendanceController.js:323 ~ getTodayAttendance ~ totalHours:", totalHours)
                         // employeeAttendance.totalWorkingHours = totalHours.toFixed(2);
                         employeeAttendance.totalWorkingHours = formatTotalWorkingHours(totalHours);
                     }
@@ -333,7 +332,7 @@ const getTodayAttendance = async (req, res, next) => {
                                 return punch.type === 'punchIn' && punch.punchIn >= breakEndTime
                             });
 
-                            if (lastBreakPunchOut1[0].punchOut && breakPunches[0]?.punchIn) {
+                            if (lastBreakPunchOut1[0]?.punchOut && breakPunches[0]?.punchIn) {
                                 const breakMinutes = (new Date(breakPunches[0]?.punchIn - new Date(lastBreakPunchOut1[0].punchOut).getTime()).getTime()) / (1000 * 60);
                                 employeeAttendance.breakTime = breakMinutes.toFixed(2);
                             }
@@ -426,11 +425,12 @@ const getEmployeePunchesToday = async (req, res, next) => {
                     const breakStartTime = new Date(currentDate).setHours(13, 0, 0, 0); // 1:00 PM
                     const breakEndTime = new Date(currentDate).setHours(13, 45, 0, 0); // 1:45 PM
 
-                    const lastBreakPunchOut1 = FindAttendes.punches.filter(punch => punch.type === 'punchOut' && punch.punchOut <= breakStartTime);
+                    const lastBreakPunchOut1 = FindAttendes.punches.filter(punch => punch.type === 'punchOut' && punch.punchOut >= breakStartTime)
+
 
                     if (lastBreakPunchOut1.length > 0) {
                         const breakPunches = FindAttendes.punches.filter(punch => punch.type === 'punchIn' && punch.punchIn >= breakEndTime);
-                        if (lastBreakPunchOut1[0].punchOut) {
+                        if (lastBreakPunchOut1[0]?.punchOut && breakPunches[0]?.punchIn) {
                             const breakMinutes = (new Date(breakPunches[0].punchIn - new Date(lastBreakPunchOut1[0].punchOut).getTime()).getTime()) / (1000 * 60);
                             breakTime = breakMinutes.toFixed(2);
                         }
