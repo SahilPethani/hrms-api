@@ -4,13 +4,6 @@ const Employee = require("../models/employeeModel");
 const Attendance = require("../models/attendanceModel");
 const Holiday = require("../models/holidayModel");
 
-// Constants
-const IST_TIME_ZONE = "Asia/Kolkata";
-
-// Function to convert GMT to IST
-const convertToIST = (date) => new Date(date.toLocaleString("en-US", { timeZone: IST_TIME_ZONE }));
-
-
 const punchIn = async (req, res, next) => {
     try {
         const employeeId = req.params.id;
@@ -20,10 +13,10 @@ const punchIn = async (req, res, next) => {
         if (!employee) {
             return next(new ErrorHandler(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
         }
-        const currentDateIST = convertToIST(new Date());
-        
-        // const currentDateIST = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+        const currentDateIST = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
         const currentDate = new Date(currentDateIST).setHours(0, 0, 0, 0);
+
+        // const currentDateIST = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
         const isHoliday = await Holiday.exists({ holiday_date: new Date(currentDate) });
 
         if (isHoliday) {
@@ -38,7 +31,6 @@ const punchIn = async (req, res, next) => {
             date: currentDate,
             "attendanceDetails.employeeId": employee._id,
         });
-        console.log("🚀 ~ file: punchController.js:34 ~ punchIn ~ todayAttendance:", todayAttendance)
 
         if (!todayAttendance) {
             todayAttendance = await Attendance.findOneAndUpdate(
@@ -58,7 +50,7 @@ const punchIn = async (req, res, next) => {
 
         const punchInDetails = {
             type: "punchIn",
-            punchIn: new Date(),
+            punch_time: new Date(),
             note: note,
         };
 
@@ -131,7 +123,7 @@ const punchOut = async (req, res, next) => {
 
         const punchOutDetails = {
             type: "punchOut",
-            punchOut: new Date(),
+            punch_time: new Date(),
             note: note,
         };
 
@@ -209,7 +201,7 @@ const addPunchForHoliday = async (date) => {
                     present: 0,
                     punches: [{
                         type: "holiday",
-                        punchIn: date,
+                        punch_time: date,
                         note: "",
                     }],
                 };
@@ -223,7 +215,7 @@ const addPunchForHoliday = async (date) => {
                 if (employeeAttendanceDetailsIndex !== -1) {
                     todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches.push({
                         type: "holiday",
-                        punchIn: date,
+                        punch_time: date,
                         note: "",
                     });
                     todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].present = 0;
@@ -237,7 +229,7 @@ const addPunchForHoliday = async (date) => {
                     present: 0,
                     punches: [{
                         type: "holiday",
-                        punchIn: date,
+                        punch_time: date,
                         note: "",
                     }],
                 };
@@ -270,7 +262,7 @@ const addPunchWeekend = async (date) => {
                                 present: 0,
                                 punches: [{
                                     type: "weekend",
-                                    punchIn: date,
+                                    punch_time: date,
                                     note: "",
                                 }],
                             },
@@ -285,7 +277,7 @@ const addPunchWeekend = async (date) => {
                     present: 0,
                     punches: [{
                         type: "weekend",
-                        punchIn: date,
+                        punch_time: date,
                         note: "",
                     }],
                 };
@@ -299,7 +291,7 @@ const addPunchWeekend = async (date) => {
                 if (employeeAttendanceDetailsIndex !== -1) {
                     todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches.push({
                         type: "weekend",
-                        punchIn: date,
+                        punch_time: date,
                         note: "",
                     });
                     todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].present = 0;
@@ -313,7 +305,7 @@ const addPunchWeekend = async (date) => {
                     present: 0,
                     punches: [{
                         type: "weekend",
-                        punchIn: date,
+                        punch_time: date,
                         note: "",
                     }],
                 };

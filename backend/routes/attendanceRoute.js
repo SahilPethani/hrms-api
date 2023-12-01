@@ -1,6 +1,6 @@
 // routes.js
 const express = require('express');
-const { getAttendanceDetails, getEmployeeAttendanceSummary, getAttendanceSheet, getTodayAttendance, getEmployeePunchesToday } = require('../controller/attendanceController');
+const { getAttendanceDetails, getEmployeeAttendanceSummary, getAttendanceSheet, getTodayAttendance, getEmployeePunchesToday, getEmployeeAttendanceDetails } = require('../controller/attendanceController');
 const { authenticateUser, authorizePermission } = require('../middleware/auth');
 const { punchIn, punchOut } = require('../controller/punchController');
 const router = express.Router();
@@ -14,5 +14,7 @@ router.get('/attendance/today', authenticateUser, authorizePermission("admin"), 
 
 router.get('/attendance/detail/:id', authenticateUser, getAttendanceDetails);
 router.get('/attendance/today/:id', authenticateUser, getEmployeePunchesToday);
+
+router.get('/attendance/employee/:id', authenticateUser, getEmployeeAttendanceDetails);
 
 module.exports = router;

@@ -3,9 +3,8 @@ const bcrypt = require('bcryptjs');
 const validator = require('validator');
 
 const PunchSchema = new mongoose.Schema({
-  type: { type: String, enum: ["punchIn", "punchOut"], required: true },
-  punchIn: { type: Date },
-  punchOut: { type: Date },
+  type: { type: String, enum: ["punchIn", "punchOut", "weekend", "holiday"], required: true },
+  punch_time: { type: Date },
   note: { type: String },
 });
 

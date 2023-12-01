@@ -64,6 +64,28 @@ const formatMinutesToTime = (minutes) => {
     return `${formattedHours}h:${formattedMinutes}m`;
 };
 
+const formatHoursMinutes = (hours) => {
+    const formattedHours = Math.floor(hours).toString().padStart(2, '0');
+    const formattedMinutes = Math.floor((hours % 1) * 60).toString().padStart(2, '0');
+    return `${formattedHours}h:${formattedMinutes}m`;
+};
+
+const getStartAndEndOfWeek = (date) => {
+    const currentDate = date || new Date();
+    const currentDay = currentDate.getDay();
+    const startDate = new Date(currentDate);
+    startDate.setDate(currentDate.getDate() - currentDay); // Start of the week (Sunday)
+    startDate.setHours(0, 0, 0, 0);
+
+    const endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + 6); // End of the week (Saturday)
+    endDate.setHours(23, 59, 59, 999);
+
+    return { startDate, endDate };
+};
+
+
+
 const getEmployeeAttendanceStatistics = async (employeeId) => {
     try {
         const currentDateIST = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
@@ -77,92 +99,55 @@ const getEmployeeAttendanceStatistics = async (employeeId) => {
 
         if (!todayAttendanceRecord) {
             return {
-                todayHours: 0,
-                thisWeekHours: 0,
-                thisMonthHours: 0,
-                overtimeToday: 0,
+                todayHours: formatHoursMinutes(0),
+                thisWeekHours: formatHoursMinutes(0),
+                thisMonthHours: formatHoursMinutes(0),
             };
         }
 
-        const employeeDetails = todayAttendanceRecord.attendanceDetails.find(
-            (detail) => detail.employeeId.equals(employeeId)
-        );
-
-        let todayHours = 0;
-        let overtimeToday = 0;
-
-        if (employeeDetails.punches.length > 0) {
-            const firstPunch = new Date(employeeDetails.punches[0]?.punchIn);
-            const lastPunch = employeeDetails.punches.slice(-1)[0].punchOut || null;
-            const lastPunchTime = lastPunch ? new Date(lastPunch) : null;
-
-            if (lastPunchTime) {
-                const totalHours = (lastPunchTime - firstPunch) / (1000 * 60 * 60);
-                todayHours = totalHours.toFixed(2);
-
-                const overtimeStartTime = new Date(currentDate);
-                overtimeStartTime.setHours(18, 30, 0, 0); // 6:30 PM IST
-                const lastPunchOut = lastPunchTime.getTime();
-
-                if (lastPunchOut > overtimeStartTime.getTime()) {
-                    const overtimeMilliseconds = lastPunchOut - overtimeStartTime.getTime();
-                    const overtimeHours = overtimeMilliseconds / (1000 * 60 * 60);
-                    overtimeToday = overtimeHours.toFixed(2); // Convert hours to a fixed format
-                }
-            }
-        }
-
-        // Calculate hours worked this week and this month
         const startOfWeek = new Date(currentDate);
         startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Start of the week (Sunday)
         const endOfWeek = new Date(startOfWeek);
         endOfWeek.setDate(endOfWeek.getDate() + 6); // End of the week (Saturday)
 
-        const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-        const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+        const employeeDetailsThisWeek = todayAttendanceRecord.attendanceDetails.find(
+            (detail) => detail.employeeId.equals(employeeId) &&
+                detail.punches.some(punch =>
+                    new Date(punch.punchIn).getTime() >= startOfWeek.getTime() &&
+                    new Date(punch.punchIn).getTime() <= endOfWeek.getTime()
+                )
+        );
 
-        // Placeholder logic, replace with your calculations
+        let todayHours = 0;
         let thisWeekHours = 0;
         let thisMonthHours = 0;
 
-        if (employeeDetails && employeeDetails.attendanceDetails) {
-            employeeDetails.attendanceDetails.forEach((attendanceRecord) => {
-                if (attendanceRecord.punches) {
-                    attendanceRecord.punches.forEach((punch) => {
-                        const punchInTime = new Date(punch.punchIn).getTime();
-                        // Week calculation
-                        if (punchInTime >= startOfWeek.getTime() && punchInTime <= endOfWeek.getTime()) {
-                            const lastPunch = punch.punchOut || null;
-                            const lastPunchTime = lastPunch ? new Date(lastPunch).getTime() : null;
+        if (employeeDetailsThisWeek && employeeDetailsThisWeek.punches.length > 0) {
+            const firstPunchThisWeek = new Date(employeeDetailsThisWeek.punches[0]?.punchIn);
+            const currentTime = new Date();
 
-                            if (lastPunchTime) {
-                                const totalHours = (lastPunchTime - punchInTime) / (1000 * 60 * 60);
-                                thisWeekHours += totalHours;
-                            }
-                        }
-                        // Month calculation
-                        if (punchInTime >= startOfMonth.getTime() && punchInTime <= endOfMonth.getTime()) {
-                            const lastPunch = punch.punchOut || null;
-                            const lastPunchTime = lastPunch ? new Date(lastPunch).getTime() : null;
+            // Find the last punch-out time within today's punches
+            const lastPunchOutToday = employeeDetailsThisWeek.punches[employeeDetailsThisWeek.punches.length - 1]
+            console.log("🚀 ~ file: helper.js:131 ~ getEmployeeAttendanceStatistics ~ lastPunchOutToday:", lastPunchOutToday.punchIn)
 
-                            if (lastPunchTime) {
-                                const totalHours = (lastPunchTime - punchInTime) / (1000 * 60 * 60);
-                                thisMonthHours += totalHours;
-                            }
-                        }
-                    });
-                }
-            });
+            // Calculate hours between first punch in this week and the last punch-out time, but not more than 8 hours
+            let totalTodayHours = Math.min((lastPunchOutToday - firstPunchThisWeek) / (1000 * 60 * 60), 8);
+
+            // Calculate total hours for this week, not exceeding 48 hours
+            thisWeekHours = Math.min(thisWeekHours + totalTodayHours, 48);
+            todayHours = totalTodayHours;
         }
 
+        // ... (rest of the code for thisMonthHours, if needed)
+
         return {
-            todayHours: todayHours,
-            thisWeekHours: thisWeekHours.toFixed(2),
-            thisMonthHours: thisMonthHours.toFixed(2),
-            overtimeToday: overtimeToday,
+            todayHours: formatHoursMinutes(todayHours),
+            thisWeekHours: formatHoursMinutes(thisWeekHours),
+            thisMonthHours: formatHoursMinutes(thisMonthHours),
+            employeeDetailsThisWeek
         };
     } catch (error) {
-        console.error(error); 
+        console.error(error);
         return {
             success: false,
             message: error.message || "Error retrieving attendance statistics",
