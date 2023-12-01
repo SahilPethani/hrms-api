@@ -172,20 +172,18 @@ const getAttendanceSheet = async (req, res, next) => {
         const endDateParam = req.query.endDate;
 
         const currentDate = new Date();
-        const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-        const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
         const istOptions = { timeZone: 'Asia/Kolkata' };
 
         let startDate, endDate;
 
         if (startDateParam && endDateParam) {
-            startDate = startDateParam
-                ? new Date(`${startDateParam}T00:00:00.000Z`).toLocaleString('en-US', istOptions)
-                : firstDayOfMonth.toLocaleString('en-US', istOptions);
-            endDate = endDateParam
-                ? new Date(`${endDateParam}T23:59:59.999Z`).toLocaleString('en-US', istOptions)
-                : lastDayOfMonth.toLocaleString('en-US', istOptions);
+            startDate = new Date(startDateParam).toLocaleString('en-US', istOptions);
+            endDate = new Date(endDateParam).toLocaleString('en-US', istOptions);
         } else {
+            // Get the first and last day of the current month
+            const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+            const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+
             startDate = firstDayOfMonth.toLocaleString('en-US', istOptions);
             endDate = lastDayOfMonth.toLocaleString('en-US', istOptions);
         }
@@ -200,12 +198,17 @@ const getAttendanceSheet = async (req, res, next) => {
                 },
             },
         };
-        const Holidays = await Holiday.find();
 
+        const Holidays = await Holiday.find();
         const employees = await Employee.find(filter).lean();
+
         const attendanceSheet = employees.map(employee => {
-            const attendanceDetails = Array.from({ length: lastDayOfMonth.getDate() }, (_, day) => {
-                const currentDateInLoop = new Date(currentDate.getFullYear(), currentDate.getMonth(), day + 1);
+            const attendanceDetails = Array.from({ length: 31 }, (_, day) => {
+                const currentDateInLoop = new Date(
+                    currentDate.getFullYear(),
+                    currentDate.getMonth(),
+                    day + 1
+                );
                 const isSunday = currentDateInLoop.getDay() === 0;
                 const attendanceData = employee.attendances.find(attendance =>
                     new Date(attendance.date).getDate() === currentDateInLoop.getDate()
@@ -221,7 +224,6 @@ const getAttendanceSheet = async (req, res, next) => {
                     date: currentDateInLoop.toLocaleString('en-US', istOptions),
                     dayName: getDayName(currentDateInLoop.getDay()),
                     present: attendanceData ? attendanceData.present === 1 : false,
-                    // absent: attendanceData ? attendanceData.present !== 1 : true,
                     absent: isSunday ? false : !(attendanceData ? attendanceData.present === 1 : false),
                     holiday: isHoliday ? true : isSunday,
                 };

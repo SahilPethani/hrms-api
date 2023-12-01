@@ -4,6 +4,12 @@ const Employee = require("../models/employeeModel");
 const Attendance = require("../models/attendanceModel");
 const Holiday = require("../models/holidayModel");
 
+// Constants
+const IST_TIME_ZONE = "Asia/Kolkata";
+
+// Function to convert GMT to IST
+const convertToIST = (date) => new Date(date.toLocaleString("en-US", { timeZone: IST_TIME_ZONE }));
+
 
 const punchIn = async (req, res, next) => {
     try {
@@ -14,8 +20,9 @@ const punchIn = async (req, res, next) => {
         if (!employee) {
             return next(new ErrorHandler(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
         }
-
-        const currentDateIST = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+        const currentDateIST = convertToIST(new Date());
+        
+        // const currentDateIST = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
         const currentDate = new Date(currentDateIST).setHours(0, 0, 0, 0);
         const isHoliday = await Holiday.exists({ holiday_date: new Date(currentDate) });
 
