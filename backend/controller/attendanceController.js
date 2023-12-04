@@ -731,7 +731,7 @@ const getEmployeeAttendanceList = async (req, res, next) => {
 const getWeeklyEmployeeAttendanceCount = async (req, res, next) => {
     try {
         const currentDate = moment().startOf('isoWeek'); // Start of the current week
-        const endDate = moment().endOf('isoWeek'); // End of the current week
+        const endDate = currentDate.clone().add(6, 'days'); // Consider only the first 6 days
 
         const employeeAttendanceCounts = [];
 
@@ -763,7 +763,7 @@ const getWeeklyEmployeeAttendanceCount = async (req, res, next) => {
         return res.status(StatusCodes.OK).json({
             status: StatusCodes.OK,
             success: true,
-            message: `Daily employee attendance counts for the week retrieved successfully`,
+            message: `Daily employee attendance counts for the first 6 days of the week retrieved successfully (excluding Sundays)`,
             data: {
                 startDate: currentDate.toISOString(),
                 endDate: endDate.toISOString(),
