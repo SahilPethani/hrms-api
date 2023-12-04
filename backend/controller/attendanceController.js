@@ -4,6 +4,7 @@ const Employee = require("../models/employeeModel");
 const Attendance = require("../models/attendanceModel");
 const { getDayName, formatTotalWorkingHours, formatMinutesToTime } = require("../utils/helper");
 const Holiday = require("../models/holidayModel");
+const moment = require('moment');
 
 const getAttendanceDetails = async (req, res, next) => {
     try {
@@ -606,6 +607,9 @@ const getEmployeeAttendanceDetails = async (req, res, next) => {
 const getEmployeeAttendanceList = async (req, res, next) => {
     try {
         const employeeId = req.params.id;
+        const page = parseInt(req.query.page_no) || 1;
+        const perPage = parseInt(req.query.items_per_page) || 10;
+        const skip = (page - 1) * perPage;
 
         let employee = await Employee.findById(employeeId);
         if (!employee) {
@@ -624,20 +628,36 @@ const getEmployeeAttendanceList = async (req, res, next) => {
                 data: {
                     employeeId,
                     attendanceList: [],
+                    pagination: {
+                        current_page_item: 0,
+                        page_no: parseInt(page),
+                        items_per_page: parseInt(perPage),
+                    },
                 },
             });
         }
 
         const holidays = await Holiday.find();
 
-        const attendanceList = attendanceRecords.flatMap(record => {
-            const punches = record.attendanceDetails.find(detail =>
+        const processedDates = new Set();
+        const attendanceList = [];
+
+        attendanceRecords.forEach((record) => {
+            const punches = record.attendanceDetails.find((detail) =>
                 detail.employeeId.equals(employee._id)
             )?.punches || [];
 
-            return punches.map((punch, index) => {
+            punches.forEach((punch, index) => {
                 const date = punch.punch_time.toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata' });
-                const isHoliday = holidays.some(holiday => {
+
+                // Skip processing if the date is already processed
+                if (processedDates.has(date)) {
+                    return;
+                }
+
+                processedDates.add(date);
+
+                const isHoliday = holidays.some((holiday) => {
                     const holidayDate = new Date(holiday.holiday_date).toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata' });
                     return holidayDate === date;
                 });
@@ -648,37 +668,44 @@ const getEmployeeAttendanceList = async (req, res, next) => {
                 let hours = '00:00';
                 let status = 'Absent';
 
-                if (index === 0 && punch.type === 'punchIn') {
-                    checkInTime = punch.punch_time.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
+                const punchesForDate = punches.filter(
+                    (p) => p.punch_time.toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata' }) === date
+                );
+
+                if (punchesForDate.length > 0) {
+                    checkInTime = punchesForDate[0].punch_time.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
                     status = isHoliday ? 'Holiday' : 'Present';
                 }
 
-                if (index > 0) {
-                    const previousPunch = punches[index - 1];
-                    const timeDiff = punch.punch_time - previousPunch.punch_time;
+                if (punchesForDate.length > 1) {
+                    const lastPunch = punchesForDate[punchesForDate.length - 1];
 
-                    if (punch.type === 'breakEnd') {
-                        breakTime = punch.punch_time.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
-                    } else if (punch.type === 'punchOut') {
-                        checkOutTime = punch.punch_time.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
+                    if (lastPunch.type === 'breakEnd') {
+                        breakTime = lastPunch.punch_time.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
+                    } else if (lastPunch.type === 'punchOut') {
+                        checkOutTime = lastPunch.punch_time.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
                         status = isHoliday ? 'Holiday' : 'Present';
                     }
 
-                    if (punch.type === 'punchOut' || punch.type === 'breakEnd') {
+                    if (lastPunch.type === 'punchOut' || lastPunch.type === 'breakEnd') {
+                        const timeDiff = lastPunch.punch_time - punchesForDate[0].punch_time;
                         hours = formatTotalWorkingHours(timeDiff / (1000 * 60 * 60));
                     }
                 }
 
-                return {
+                attendanceList.push({
                     date,
                     checkInTime,
                     breakTime,
                     checkOutTime,
                     hours,
                     status,
-                };
+                });
             });
         });
+
+        // Apply pagination
+        const paginatedAttendanceList = attendanceList.slice(skip, skip + perPage);
 
         return res.status(StatusCodes.OK).json({
             status: StatusCodes.OK,
@@ -686,13 +713,68 @@ const getEmployeeAttendanceList = async (req, res, next) => {
             message: `Attendance details for the employee retrieved successfully`,
             data: {
                 employeeId,
-                attendanceList,
+                attendanceList: paginatedAttendanceList,
+                pagination: {
+                    current_page_item: paginatedAttendanceList.length,
+                    page_no: parseInt(page),
+                    items_per_page: parseInt(perPage),
+                },
             },
         });
     } catch (error) {
         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
+
+
+
+const getWeeklyEmployeeAttendanceCount = async (req, res, next) => {
+    try {
+        const currentDate = moment().startOf('isoWeek'); // Start of the current week
+        const endDate = moment().endOf('isoWeek'); // End of the current week
+
+        const employeeAttendanceCounts = [];
+
+        for (let date = currentDate.clone(); date.isSameOrBefore(endDate); date.add(1, 'day')) {
+            const presentEmployees = await Attendance.find({
+                date: date.toDate(),
+                "attendanceDetails.present": 1,
+            }).populate('attendanceDetails.employeeId', 'first_name last_name user_id designation mobile avatar');
+
+            const presentEmployeesCount = presentEmployees.reduce((total, employeeAttendance) => {
+                return total + employeeAttendance.attendanceDetails.filter(detail => detail.present).length;
+            }, 0);
+
+            const absentEmployeesCount = await Employee.countDocuments({
+                _id: {
+                    $nin: presentEmployees.flatMap(employeeAttendance => {
+                        return employeeAttendance.attendanceDetails.map(detail => detail.employeeId._id);
+                    })
+                },
+            });
+
+            employeeAttendanceCounts.push({
+                date: date.toISOString(),
+                presentEmployeesCount,
+                absentEmployeesCount,
+            });
+        }
+
+        return res.status(StatusCodes.OK).json({
+            status: StatusCodes.OK,
+            success: true,
+            message: `Daily employee attendance counts for the week retrieved successfully`,
+            data: {
+                startDate: currentDate.toISOString(),
+                endDate: endDate.toISOString(),
+                employeeAttendanceCounts,
+            },
+        });
+    } catch (error) {
+        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
+    }
+};
+
 module.exports = {
     getAttendanceDetails,
     getEmployeeAttendanceSummary,
@@ -700,5 +782,6 @@ module.exports = {
     getTodayAttendance,
     getEmployeePunchesToday,
     getEmployeeAttendanceDetails,
-    getEmployeeAttendanceList
+    getEmployeeAttendanceList,
+    getWeeklyEmployeeAttendanceCount
 };
