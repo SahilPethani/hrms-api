@@ -186,7 +186,6 @@ const getAttendanceSheet = async (req, res, next) => {
         }
 
         const currentDate = new Date();
-        const istOptions = { timeZone: 'Asia/Kolkata' };
 
         // Convert month name to a number (0-indexed, where January is 0)
         const monthIndex = new Date(`${monthNameParam} 1, ${currentDate.getFullYear()}`).getMonth();
@@ -202,8 +201,8 @@ const getAttendanceSheet = async (req, res, next) => {
         const firstDayOfMonth = new Date(currentDate.getFullYear(), monthIndex, 1);
         const lastDayOfMonth = new Date(currentDate.getFullYear(), monthIndex + 1, 0);
 
-        const startDate = firstDayOfMonth.toLocaleString('en-US', istOptions);
-        const endDate = lastDayOfMonth.toLocaleString('en-US', istOptions);
+        const startDate = firstDayOfMonth.toLocaleString('en-US',  { timeZone: 'Asia/Kolkata' });
+        const endDate = lastDayOfMonth.toLocaleString('en-US',  { timeZone: 'Asia/Kolkata' });
 
         const filter = {
             attendances: {
@@ -230,13 +229,13 @@ const getAttendanceSheet = async (req, res, next) => {
 
                 // Check for attendance on the specific day
                 const attendanceData = employee.attendances.find(attendance =>
-                    new Date(attendance.date).toLocaleString('en-US', istOptions) === currentDateInLoop.toLocaleString('en-US', istOptions)
+                    new Date(attendance.date).toLocaleString('en-US',  { timeZone: 'Asia/Kolkata' }) === currentDateInLoop.toLocaleString('en-US',  { timeZone: 'Asia/Kolkata' })
                 );
 
                 const isHoliday = Holidays.find((date) => {
                     const holidayDateUTC = new Date(date.holiday_date);
-                    const holidayDateLocal = holidayDateUTC.toLocaleString('en-US', istOptions);
-                    const currentDateInLoopLocal = currentDateInLoop.toLocaleString('en-US', istOptions);
+                    const holidayDateLocal = holidayDateUTC.toLocaleString('en-US',  { timeZone: 'Asia/Kolkata' });
+                    const currentDateInLoopLocal = currentDateInLoop.toLocaleString('en-US',  { timeZone: 'Asia/Kolkata' });
                     return holidayDateLocal === currentDateInLoopLocal;
                 });
 
@@ -245,7 +244,7 @@ const getAttendanceSheet = async (req, res, next) => {
                 const isAbsent = isSunday ? false : !isPresent;
 
                 return {
-                    date: currentDateInLoop.toLocaleString('en-US', istOptions),
+                    date: currentDateInLoop.toLocaleString('en-US',  { timeZone: 'Asia/Kolkata' }),
                     dayName: getDayName(currentDateInLoop.getDay()),
                     present: isPresent,
                     absent: isAbsent,
