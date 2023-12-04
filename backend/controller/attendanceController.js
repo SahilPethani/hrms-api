@@ -234,10 +234,14 @@ const getAttendanceSheet = async (req, res, next) => {
 
                 const isHoliday = Holidays.find((date) => {
                     const holidayDateUTC = new Date(date.holiday_date);
-                    const holidayDateLocal = holidayDateUTC.toLocaleString('en-US',  { timeZone: 'Asia/Kolkata' });
-                    const currentDateInLoopLocal = currentDateInLoop.toLocaleString('en-US',  { timeZone: 'Asia/Kolkata' });
+                    const holidayDateLocal = holidayDateUTC.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+                    const currentDateInLoopLocal = currentDateInLoop.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+                
+                    console.log('holidayDateLocal:', holidayDateLocal);
+                    console.log('currentDateInLoopLocal:', currentDateInLoopLocal);
+                
                     return holidayDateLocal === currentDateInLoopLocal;
-                });
+                });                
 
                 // Check if the employee has attendance on this specific day
                 const isPresent = attendanceData ? attendanceData.present === 1 : false;

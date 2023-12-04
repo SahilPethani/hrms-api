@@ -10,18 +10,31 @@ const addHoliday = async (req, res, next) => {
         if (!holiday_no || !holiday_name || !holiday_date) {
             return next(new ErrorHander("Holiday number, name, and date are required", StatusCodes.BAD_REQUEST));
         }
-        const isSunday = new Date(holiday_date).getDay() === 0;
+
+        const today = new Date();
+        const selectedDate = new Date(holiday_date);
+
+        if (selectedDate <= today) {
+            return next(new ErrorHander("Invalid date. Holidays must be set for future dates only.", StatusCodes.BAD_REQUEST));
+        }
+
+        const isSunday = selectedDate.getDay() === 0;
         if (isSunday) {
             return next(new ErrorHander("Holidays cannot be added on Sundays", StatusCodes.BAD_REQUEST));
         }
 
+        // Convert the holiday_date to the desired format
+        const formattedHolidayDate = selectedDate.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+
         const holiday = new Holiday({
             holiday_no,
             holiday_name,
-            holiday_date,
+            holiday_date: formattedHolidayDate, // Use the formatted date
             detail,
         });
+
         const savedHoliday = await holiday.save();
+
         return res.status(StatusCodes.CREATED).json({
             status: StatusCodes.CREATED,
             success: true,
@@ -105,9 +118,22 @@ const updateHoliday = async (req, res, next) => {
             detail,
         };
 
+        const existingHoliday = await Holiday.findById(holidayId);
+
+        if (!existingHoliday) {
+            return next(new ErrorHander(`Holiday not found with id ${holidayId}`, StatusCodes.NOT_FOUND));
+        }
+
         const isSunday = new Date(holiday_date).getDay() === 0;
         if (isSunday) {
-            return next(new ErrorHander("Holidays cannot be update on Sundays", StatusCodes.BAD_REQUEST));
+            return next(new ErrorHander("Holidays cannot be updated on Sundays", StatusCodes.BAD_REQUEST));
+        }
+
+        const today = new Date();
+        const selectedDate = new Date(holiday_date);
+
+        if (selectedDate <= today) {
+            return next(new ErrorHander("Invalid date. Holidays must be set for future dates only.", StatusCodes.BAD_REQUEST));
         }
 
         const updatedHoliday = await Holiday.findByIdAndUpdate(
@@ -115,10 +141,6 @@ const updateHoliday = async (req, res, next) => {
             { $set: updatedHolidayData },
             { new: true }
         );
-
-        if (!updatedHoliday) {
-            return next(new ErrorHander(`Holiday not found with id ${holidayId}`, StatusCodes.NOT_FOUND));
-        }
 
         return res.status(StatusCodes.OK).json({
             status: StatusCodes.OK,
