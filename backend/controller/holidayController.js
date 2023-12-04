@@ -5,7 +5,7 @@ const Holiday = require("../models/holidayModel");
 
 const addHoliday = async (req, res, next) => {
     try {
-        const { holiday_no, holiday_name, holiday_date, detail } = req.body;
+        const { holiday_no, holiday_name, holiday_date, detail,status } = req.body;
 
         if (!holiday_no || !holiday_name || !holiday_date) {
             return next(new ErrorHander("Holiday number, name, and date are required", StatusCodes.BAD_REQUEST));
@@ -31,6 +31,7 @@ const addHoliday = async (req, res, next) => {
             holiday_name,
             holiday_date: formattedHolidayDate, // Use the formatted date
             detail,
+            status
         });
 
         const savedHoliday = await holiday.save();
@@ -86,6 +87,51 @@ const getAllHolidays = async (req, res, next) => {
     }
 };
 
+const getAllHolidaysEmployee = async (req, res, next) => {
+    try {
+        const page = parseInt(req.query.page_no) || 1;
+        const perPage = parseInt(req.query.items_per_page) || 10;
+        const search_text = req.query.search_text || '';
+        
+        // Updated query to include status: 1
+        const query = {
+            $and: [
+                { status: 1 },
+                {
+                    $or: [
+                        { holiday_no: { $regex: search_text, $options: 'i' } },
+                        { holiday_name: { $regex: search_text, $options: 'i' } },
+                    ],
+                },
+            ],
+        };
+
+        const skip = (page - 1) * perPage;
+        const holidays = await Holiday.find(query)
+            .skip(skip)
+            .limit(perPage);
+
+        const totalHolidays = await Holiday.countDocuments(query);
+        const totalPages = Math.ceil(totalHolidays / perPage);
+
+        return res.status(StatusCodes.OK).json({
+            status: StatusCodes.OK,
+            success: true,
+            data: holidays,
+            pagination: {
+                total_items: totalHolidays,
+                total_pages: totalPages,
+                current_page_item: holidays.length,
+                page_no: parseInt(page),
+                items_per_page: parseInt(perPage),
+            },
+        });
+    } catch (error) {
+        return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
+    }
+};
+
+
 
 const getHolidayById = async (req, res, next) => {
     try {
@@ -109,13 +155,14 @@ const getHolidayById = async (req, res, next) => {
 const updateHoliday = async (req, res, next) => {
     try {
         const holidayId = req.params.id;
-        const { holiday_no, holiday_name, holiday_date, detail } = req.body;
+        const { holiday_no, holiday_name, holiday_date, detail, status } = req.body;
 
         const updatedHolidayData = {
             holiday_no,
             holiday_name,
             holiday_date,
             detail,
+            status
         };
 
         const existingHoliday = await Holiday.findById(holidayId);
@@ -214,4 +261,5 @@ module.exports = {
     updateHoliday,
     deleteHoliday,
     getCurrentMonthHolidays,
+    getAllHolidaysEmployee
 };

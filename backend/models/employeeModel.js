@@ -92,6 +92,7 @@ const userSchema = new mongoose.Schema({
     default: 0
   },
   attendances: [AttendanceSchema],
+  Leaves:[]
 });
 
 // userSchema.pre('save', async function (next) {

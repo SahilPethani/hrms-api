@@ -3,7 +3,7 @@ const {
     authenticateUser,
     authorizePermission
 } = require('../middleware/auth');
-const { addHoliday, getAllHolidays, getHolidayById, updateHoliday, deleteHoliday, getCurrentMonthHolidays } = require("../controller/holidayController");
+const { addHoliday, getAllHolidays, getHolidayById, updateHoliday, deleteHoliday, getCurrentMonthHolidays, getAllHolidaysEmployee } = require("../controller/holidayController");
 
 const router = express.Router();
 
@@ -30,5 +30,9 @@ router
 router
     .route("/holiday/currentmonth")
     .get(authenticateUser, authorizePermission("admin"), getCurrentMonthHolidays);
+
+router
+    .route("/holiday/employee/currentmonth")
+    .get(authenticateUser, getAllHolidaysEmployee);
 
 module.exports = router;

@@ -186,7 +186,7 @@ const addPunchForHoliday = async (date) => {
                                 present: 0,
                                 punches: [{
                                     type: "holiday",
-                                    punchIn: date,
+                                    punch_time: date,
                                     note: "",
                                 }],
                             },
