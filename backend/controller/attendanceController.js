@@ -628,39 +628,49 @@ const getEmployeeAttendanceList = async (req, res, next) => {
             });
         }
 
+        const holidays = await Holiday.find();
+
         const attendanceList = attendanceRecords.flatMap(record => {
             const punches = record.attendanceDetails.find(detail =>
                 detail.employeeId.equals(employee._id)
             )?.punches || [];
 
             return punches.map((punch, index) => {
-                const checkInTime = punch.type === 'punchIn'
-                    ? punch.punch_time.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' })
-                    : '00:00';
+                const date = punch.punch_time.toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata' });
+                const isHoliday = holidays.some(holiday => {
+                    const holidayDate = new Date(holiday.holiday_date).toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata' });
+                    return holidayDate === date;
+                });
 
-                const breakTime = punch.type === 'breakStart'
-                    ? punch.punch_time.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' })
-                    : punch.type === 'breakEnd'
-                        ? punch.punch_time.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' })
-                        : '00:00';
-
-                const checkOutTime = punch.type === 'punchOut'
-                    ? punch.punch_time.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' })
-                    : '00:00';
-
-                const status = punch.type === 'punchIn' ? 'Present' : 'Absent';
-
+                let checkInTime = '00:00';
+                let breakTime = '00:00';
+                let checkOutTime = '00:00';
                 let hours = '00:00';
+                let status = 'Absent';
+
+                if (index === 0 && punch.type === 'punchIn') {
+                    checkInTime = punch.punch_time.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
+                    status = isHoliday ? 'Holiday' : 'Present';
+                }
 
                 if (index > 0) {
                     const previousPunch = punches[index - 1];
                     const timeDiff = punch.punch_time - previousPunch.punch_time;
-                    const hoursFloat = timeDiff / (1000 * 60 * 60);
-                    hours = formatTotalWorkingHours(hoursFloat);
+
+                    if (punch.type === 'breakEnd') {
+                        breakTime = punch.punch_time.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
+                    } else if (punch.type === 'punchOut') {
+                        checkOutTime = punch.punch_time.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
+                        status = isHoliday ? 'Holiday' : 'Present';
+                    }
+
+                    if (punch.type === 'punchOut' || punch.type === 'breakEnd') {
+                        hours = formatTotalWorkingHours(timeDiff / (1000 * 60 * 60));
+                    }
                 }
 
                 return {
-                    date: punch.punch_time.toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata' }),
+                    date,
                     checkInTime,
                     breakTime,
                     checkOutTime,
@@ -683,7 +693,6 @@ const getEmployeeAttendanceList = async (req, res, next) => {
         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
-
 module.exports = {
     getAttendanceDetails,
     getEmployeeAttendanceSummary,
