@@ -2,7 +2,7 @@ const { StatusCodes } = require("http-status-codes");
 const ErrorHandler = require("../middleware/errorhander");
 const Employee = require("../models/employeeModel");
 const Attendance = require("../models/attendanceModel");
-const { calculateWorkingHours, getDayName, formatTotalWorkingHours, formatMinutesToTime, getEmployeeAttendanceStatistics } = require("../utils/helper");
+const { getDayName, formatTotalWorkingHours, formatMinutesToTime } = require("../utils/helper");
 const Holiday = require("../models/holidayModel");
 
 const getAttendanceDetails = async (req, res, next) => {
@@ -603,11 +603,93 @@ const getEmployeeAttendanceDetails = async (req, res, next) => {
     }
 };
 
+const getEmployeeAttendanceList = async (req, res, next) => {
+    try {
+        const employeeId = req.params.id;
+
+        let employee = await Employee.findById(employeeId);
+        if (!employee) {
+            return next(new ErrorHandler(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
+        }
+
+        const attendanceRecords = await Attendance.find({
+            "attendanceDetails.employeeId": employee._id,
+        });
+
+        if (!attendanceRecords || attendanceRecords.length === 0) {
+            return res.status(StatusCodes.OK).json({
+                status: StatusCodes.OK,
+                success: true,
+                message: "No attendance records found for the employee",
+                data: {
+                    employeeId,
+                    attendanceList: [],
+                },
+            });
+        }
+
+        const attendanceList = attendanceRecords.flatMap(record => {
+            const punches = record.attendanceDetails.find(detail =>
+                detail.employeeId.equals(employee._id)
+            )?.punches || [];
+
+            return punches.map((punch, index) => {
+                const checkInTime = punch.type === 'punchIn'
+                    ? punch.punch_time.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' })
+                    : '00:00';
+
+                const breakTime = punch.type === 'breakStart'
+                    ? punch.punch_time.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' })
+                    : punch.type === 'breakEnd'
+                        ? punch.punch_time.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' })
+                        : '00:00';
+
+                const checkOutTime = punch.type === 'punchOut'
+                    ? punch.punch_time.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' })
+                    : '00:00';
+
+                const status = punch.type === 'punchIn' ? 'Present' : 'Absent';
+
+                let hours = '00:00';
+
+                if (index > 0) {
+                    const previousPunch = punches[index - 1];
+                    const timeDiff = punch.punch_time - previousPunch.punch_time;
+                    const hoursFloat = timeDiff / (1000 * 60 * 60);
+                    hours = formatTotalWorkingHours(hoursFloat);
+                }
+
+                return {
+                    date: punch.punch_time.toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata' }),
+                    checkInTime,
+                    breakTime,
+                    checkOutTime,
+                    hours,
+                    status,
+                };
+            });
+        });
+
+        return res.status(StatusCodes.OK).json({
+            status: StatusCodes.OK,
+            success: true,
+            message: `Attendance details for the employee retrieved successfully`,
+            data: {
+                employeeId,
+                attendanceList,
+            },
+        });
+    } catch (error) {
+        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
+    }
+};
+
 module.exports = {
     getAttendanceDetails,
     getEmployeeAttendanceSummary,
     getAttendanceSheet,
     getTodayAttendance,
     getEmployeePunchesToday,
-    getEmployeeAttendanceDetails
+    getEmployeeAttendanceDetails,
+    getEmployeeAttendanceList
 };
