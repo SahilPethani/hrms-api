@@ -2,7 +2,7 @@ const { StatusCodes } = require("http-status-codes");
 const { validationResult } = require('express-validator');
 const Leaves = require("../models/leavesModel");
 const Employee = require("../models/employeeModel"); // Import your employee model
-const ErrorHander = require("../middleware/errorhander");
+const ErrorHandler = require("../middleware/errorhander");
 
 const applyLeave = async (req, res, next) => {
     try {
@@ -21,7 +21,7 @@ const applyLeave = async (req, res, next) => {
         const employee = await Employee.findOne({ _id: employeeId });
 
         if (!employee) {
-            return next(new ErrorHander("Employee not found", StatusCodes.NOT_FOUND));
+            return next(new ErrorHandler("Employee not found", StatusCodes.NOT_FOUND));
         }
 
         employee.leaves.push(savedLeaveApplication._id);
@@ -33,7 +33,7 @@ const applyLeave = async (req, res, next) => {
             data: savedLeaveApplication,
         });
     } catch (error) {
-        return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
+        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 }
 
@@ -43,28 +43,17 @@ const updateLeaveStatus = async (req, res, next) => {
         const { leaveId, newStatus } = req.body;
 
         if (!leaveId || !newStatus) {
-            return next(new ErrorHander('leaveId and newStatus are required', StatusCodes.BAD_REQUEST));
+            return next(new ErrorHandler('leaveId and newStatus are required', StatusCodes.BAD_REQUEST));
         }
 
         const leave = await Leaves.findById(leaveId);
         if (!leave) {
-            return next(new ErrorHander('Leave not found', StatusCodes.NOT_FOUND));
+            return next(new ErrorHandler('Leave not found', StatusCodes.NOT_FOUND));
         }
 
         leave.status = newStatus;
         await leave.save();
-        const employee = await Employee.findOne({ leaves: leaveId });
-
-        if (!employee) {
-            return next(new ErrorHander('Employee not found', StatusCodes.NOT_FOUND));
-        }
-
-        const leaveIndex = employee.leaves.indexOf(leaveId);
-        if (leaveIndex !== -1) {
-            employee.leaves[leaveIndex].status = newStatus;
-            await employee.save();
-        }
-
+     
         res.status(StatusCodes.OK).json({
             status: StatusCodes.OK,
             success: true,
@@ -72,11 +61,117 @@ const updateLeaveStatus = async (req, res, next) => {
             data: leave,
         });
     } catch (error) {
-        return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
+        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
+    }
+};
+
+const getAllLeaves = async (req, res, next) => {
+    try {
+        const { fromDate, toDate, status, type, search_text } = req.query;
+
+        const filters = {};
+        if (fromDate) filters.fromDate = { $gte: new Date(fromDate) };
+        if (toDate) filters.toDate = { $lte: new Date(toDate) };
+        if (status) filters.status = status;
+        if (type) filters.type = type;
+
+        if (search_text) {
+            filters.$or = [
+                { 'employeeId.first_name': { $regex: new RegExp(search_text, 'i') } },
+                { 'employeeId.last_name': { $regex: new RegExp(search_text, 'i') } },
+                { 'employeeId.userId': { $regex: new RegExp(search_text, 'i') } },
+            ];
+        }
+        const leaves = await Leaves.find(filters)
+            .populate({
+                path: 'employeeId',
+                model: 'Employee',
+                select: 'first_name last_name avatar userId designation',
+            });
+
+        const leavesWithDays = leaves.map(leave => {
+            const fromDate = new Date(leave.fromDate);
+            const toDate = new Date(leave.toDate);
+            const diffInMilliseconds = toDate - fromDate;
+            const days = diffInMilliseconds / (1000 * 60 * 60 * 24); // Convert milliseconds to days
+            return { ...leave.toObject(), numberOfDays: days };
+        });
+
+        res.status(StatusCodes.OK).json({
+            status: StatusCodes.OK,
+            success: true,
+            message: 'Leave applications with user information and number of days retrieved successfully',
+            data: leavesWithDays,
+        });
+    } catch (error) {
+        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
+    }
+};
+
+
+const getLeaveById = async (req, res, next) => {
+    try {
+        const leaveId = req.params.id;
+
+        const leave = await Leaves.findById(leaveId).populate({
+            path: 'employeeId',
+            model: 'Employee',
+            select: 'first_name last_name avatar userId designation',
+        });;
+
+        if (!leave) {
+            return next(new ErrorHandler('Leave not found', StatusCodes.NOT_FOUND));
+        }
+
+        res.status(StatusCodes.OK).json({
+            status: StatusCodes.OK,
+            success: true,
+            message: 'Leave details retrieved successfully',
+            data: leave,
+        });
+    } catch (error) {
+        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
+    }
+};
+
+const deleteLeave = async (req, res, next) => {
+    try {
+        const leaveId = req.params.id;
+
+        // Find the leave to be deleted
+        const leave = await Leaves.findById(leaveId);
+        if (!leave) {
+            return next(new ErrorHandler('Leave not found', StatusCodes.NOT_FOUND));
+        }
+
+        // Find the employee associated with the leave
+        const employee = await Employee.findOne({ _id: leave.employeeId });
+        if (!employee) {
+            return next(new ErrorHandler('Employee not found', StatusCodes.NOT_FOUND));
+        }
+
+        const leaveIndex = employee.leaves.indexOf(leaveId);
+        if (leaveIndex !== -1) {
+            employee.leaves.splice(leaveIndex, 1);
+        }
+
+        await employee.save();
+
+        await leave.remove();
+
+        res.status(StatusCodes.OK).json({
+            status: StatusCodes.OK,
+            success: true,
+            message: 'Leave deleted successfully',
+        });
+    } catch (error) {
+        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
 
 module.exports = {
     applyLeave,
-    updateLeaveStatus
+    updateLeaveStatus,
+    getAllLeaves,
+    getLeaveById
 }
