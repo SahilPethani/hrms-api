@@ -44,8 +44,10 @@ const getAttendanceDetails = async (req, res, next) => {
                 attendanceDetail.checkInTime = firstPunch ? firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' }) : "00:00"
 
                 if (!excludeLastPunchInTime) {
-                    const totalHours = (lastPunchTime - firstPunch) / (1000 * 60 * 60);
-                    attendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHours);
+                    if (lastPunchTime !== "00:00") {
+                        const totalHours = (lastPunchTime - firstPunch) / (1000 * 60 * 60);
+                        attendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHours);
+                    }
 
                     const overtimeStartTime = new Date(attendanceRecord.date).setHours(18, 30, 0, 0); // 6:30 PM
                     const lastPunchOut = lastPunchTime !== "00:00" ? lastPunchTime.getTime() : "00:00"
