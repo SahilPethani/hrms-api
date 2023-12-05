@@ -2,23 +2,11 @@ const { StatusCodes } = require("http-status-codes");
 const { validationResult } = require('express-validator');
 const Leaves = require("../models/leavesModel");
 const Employee = require("../models/employeeModel"); // Import your employee model
-const employeeModel = require("../models/employeeModel");
+const ErrorHander = require("../middleware/errorhander");
 
 const applyLeave = async (req, res, next) => {
     try {
-        // Validation using express-validator
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                status: StatusCodes.BAD_REQUEST,
-                success: false,
-                message: 'Validation error',
-                errors: errors.array(),
-            });
-        }
-
         const { employeeId, fromDate, toDate, type, halfDay, comments } = req.body;
-
         const leaveApplication = new Leaves({
             employeeId,
             fromDate,
@@ -30,20 +18,14 @@ const applyLeave = async (req, res, next) => {
         });
 
         const savedLeaveApplication = await leaveApplication.save();
-
-        // Update the employee document with the new leave
         const employee = await Employee.findOne({ _id: employeeId });
+
         if (!employee) {
-            return res.status(StatusCodes.NOT_FOUND).json({
-                status: StatusCodes.NOT_FOUND,
-                success: false,
-                message: 'Employee not found',
-            });
+            return next(new ErrorHander("Employee not found", StatusCodes.NOT_FOUND));
         }
 
-        employeeModel.leaves.push(savedLeaveApplication._id); // Assuming leaves array stores leave IDs
+        employee.leaves.push(savedLeaveApplication._id);
         await employee.save();
-
         res.status(StatusCodes.CREATED).json({
             status: StatusCodes.CREATED,
             success: true,
@@ -51,14 +33,50 @@ const applyLeave = async (req, res, next) => {
             data: savedLeaveApplication,
         });
     } catch (error) {
-        console.error(error);
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-            status: StatusCodes.INTERNAL_SERVER_ERROR,
-            success: false,
-            message: 'Failed to submit leave application',
-            error: error.message || 'Internal Server Error',
-        });
+        return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 }
 
-module.exports = applyLeave;
+
+const updateLeaveStatus = async (req, res, next) => {
+    try {
+        const { leaveId, newStatus } = req.body;
+
+        if (!leaveId || !newStatus) {
+            return next(new ErrorHander('leaveId and newStatus are required', StatusCodes.BAD_REQUEST));
+        }
+
+        const leave = await Leaves.findById(leaveId);
+        if (!leave) {
+            return next(new ErrorHander('Leave not found', StatusCodes.NOT_FOUND));
+        }
+
+        leave.status = newStatus;
+        await leave.save();
+        const employee = await Employee.findOne({ leaves: leaveId });
+
+        if (!employee) {
+            return next(new ErrorHander('Employee not found', StatusCodes.NOT_FOUND));
+        }
+
+        const leaveIndex = employee.leaves.indexOf(leaveId);
+        if (leaveIndex !== -1) {
+            employee.leaves[leaveIndex].status = newStatus;
+            await employee.save();
+        }
+
+        res.status(StatusCodes.OK).json({
+            status: StatusCodes.OK,
+            success: true,
+            message: `Leave status updated to ${newStatus}`,
+            data: leave,
+        });
+    } catch (error) {
+        return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
+    }
+};
+
+module.exports = {
+    applyLeave,
+    updateLeaveStatus
+}

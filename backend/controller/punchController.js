@@ -20,6 +20,18 @@ const punchIn = async (req, res, next) => {
         const isHoliday = await Holiday.exists({ holiday_date: new Date(currentDate) });
 
         if (isHoliday) {
+            const attendanceData = {
+                date,
+                present: 0,
+                punches: [{
+                    type: "weekend",
+                    punch_time: new Date(),
+                    note: "",
+                }],
+            };
+            employee.attendances.push(attendanceData);
+            await employee.save();
+
             return res.status(StatusCodes.OK).json({
                 status: StatusCodes.OK,
                 success: true,

@@ -92,7 +92,7 @@ const userSchema = new mongoose.Schema({
     default: 0
   },
   attendances: [AttendanceSchema],
-  Leaves:[]
+  leaves: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Leaves' }],
 });
 
 // userSchema.pre('save', async function (next) {
