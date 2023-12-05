@@ -1,17 +1,11 @@
 [build]
-  # Set the Node.js version
-  command = "npm install && npm run build"
-  functions = "functions"
+  command = "npm install && npm run build"  # Adjust this based on your actual build script
+  functions = "functions"  # Change this to the directory where your serverless functions are located
 
-# Add additional configuration if needed
-[context.production.environment]
-  NODE_ENV = "production"
+[[plugins]]
+  package = "./netlify-plugin-no-more-404"
 
-[context.branch-deploy]
-  command = "npm install && npm run build"
-
-[context.split1]
-  command = "npm install && npm run build"
-
-[contextual]
-  command = "npm install && npm run build"
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/server/:splat"
+  status = 200
