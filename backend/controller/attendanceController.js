@@ -39,7 +39,7 @@ const getAttendanceDetails = async (req, res, next) => {
                 const excludeLastPunchInTime = lastPunchType === 'punchIn';
 
                 attendanceDetail.checkOutTime = lastPunchTime && !excludeLastPunchInTime
-                    ? lastPunchTime ? lastPunchTime.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }) : "00:00"
+                    ? lastPunchTime !== "00:00" ? lastPunchTime.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }) : "00:00"
                     : '00:00';
                 attendanceDetail.checkInTime = firstPunch ? firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' }) : "00:00"
 
