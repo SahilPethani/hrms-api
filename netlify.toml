@@ -1,5 +1,17 @@
 [build]
-  command = "npm run build"
-  publish = "backend/server.js"  
-  "builds": [{ "src": "backend/server.js", "use": "@vercel/node" }],
-  "routes": [{ "src": "/(.*)", "dest": "backend/server.js" }]
+  # Set the Node.js version
+  command = "npm install && npm run build"
+  functions = "functions"
+
+# Add additional configuration if needed
+[context.production.environment]
+  NODE_ENV = "production"
+
+[context.branch-deploy]
+  command = "npm install && npm run build"
+
+[context.split1]
+  command = "npm install && npm run build"
+
+[contextual]
+  command = "npm install && npm run build"
