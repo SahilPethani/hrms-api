@@ -32,9 +32,9 @@ const getAttendanceDetails = async (req, res, next) => {
 
             if (punches.length > 0) {
                 const firstPunch = new Date(punches[0]?.punch_time);
-                const punchOuts = punches.filter(punch => punch.type === 'punchOut');
-                const lastPunchOut = punchOuts.length > 0 ? punchOuts[punchOuts.length - 1].punch_time : null;
-                const lastPunchTime = lastPunchOut ? new Date(lastPunchOut) : null;
+                const punchOuts = punches.filter(punch => punch?.type === 'punchOut');
+                const lastPunchOut = punchOuts?.length > 0 ? punchOuts[punchOuts?.length - 1]?.punch_time : "00:00";
+                const lastPunchTime = lastPunchOut ? new Date(lastPunchOut) : "00:00";
                 const lastPunchType = punches[punches.length - 1].type;
                 const excludeLastPunchInTime = lastPunchType === 'punchIn';
 
