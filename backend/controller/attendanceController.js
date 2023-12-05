@@ -39,7 +39,7 @@ const getAttendanceDetails = async (req, res, next) => {
                 const excludeLastPunchInTime = lastPunchType === 'punchIn';
 
                 attendanceDetail.checkOutTime = lastPunchTime && !excludeLastPunchInTime
-                    ? lastPunchTime?.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' })
+                    ? lastPunchTime.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
                     : '00:00';
                 attendanceDetail.checkInTime = firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
 
@@ -72,7 +72,9 @@ const getAttendanceDetails = async (req, res, next) => {
                         }
                     }
                 }
-                attendanceDetail.present = true;
+
+
+                attendanceDetail.present = punches.some(punch => punch.type === 'punchIn' ? true : false);
             }
             monthlyAttendanceDetails.push(attendanceDetail);
         });
@@ -202,8 +204,8 @@ const getAttendanceSheet = async (req, res, next) => {
         const firstDayOfMonth = new Date(currentDate.getFullYear(), monthIndex, 1);
         const lastDayOfMonth = new Date(currentDate.getFullYear(), monthIndex + 1, 0);
 
-        const startDate = firstDayOfMonth.toLocaleString('en-US',  { timeZone: 'Asia/Kolkata' });
-        const endDate = lastDayOfMonth.toLocaleString('en-US',  { timeZone: 'Asia/Kolkata' });
+        const startDate = firstDayOfMonth.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+        const endDate = lastDayOfMonth.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
 
         const filter = {
             attendances: {
@@ -230,26 +232,26 @@ const getAttendanceSheet = async (req, res, next) => {
 
                 // Check for attendance on the specific day
                 const attendanceData = employee.attendances.find(attendance =>
-                    new Date(attendance.date).toLocaleString('en-US',  { timeZone: 'Asia/Kolkata' }) === currentDateInLoop.toLocaleString('en-US',  { timeZone: 'Asia/Kolkata' })
+                    new Date(attendance.date).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }) === currentDateInLoop.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
                 );
 
                 const isHoliday = Holidays.find((date) => {
                     const holidayDateUTC = new Date(date.holiday_date);
                     const holidayDateLocal = holidayDateUTC.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
                     const currentDateInLoopLocal = currentDateInLoop.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
-                
+
                     console.log('holidayDateLocal:', holidayDateLocal);
                     console.log('currentDateInLoopLocal:', currentDateInLoopLocal);
-                
+
                     return holidayDateLocal === currentDateInLoopLocal;
-                });                
+                });
 
                 // Check if the employee has attendance on this specific day
                 const isPresent = attendanceData ? attendanceData.present === 1 : false;
                 const isAbsent = isSunday ? false : !isPresent;
 
                 return {
-                    date: currentDateInLoop.toLocaleString('en-US',  { timeZone: 'Asia/Kolkata' }),
+                    date: currentDateInLoop.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }),
                     dayName: getDayName(currentDateInLoop.getDay()),
                     present: isPresent,
                     absent: isAbsent,
