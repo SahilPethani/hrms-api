@@ -1,12 +1,25 @@
 const { StatusCodes } = require("http-status-codes");
-const { validationResult } = require('express-validator');
 const Leaves = require("../models/leavesModel");
-const Employee = require("../models/employeeModel"); // Import your employee model
+const Employee = require("../models/employeeModel"); 
 const ErrorHandler = require("../middleware/errorhander");
 
 const applyLeave = async (req, res, next) => {
     try {
         const { employeeId, fromDate, toDate, type, halfDay, comments } = req.body;
+
+        const today = new Date().setHours(0, 0, 0, 0);
+        const selectedFromDate = new Date(fromDate).setHours(0, 0, 0, 0);
+
+        if (selectedFromDate < today) {
+            return next(new ErrorHandler('From date must be in the future', StatusCodes.BAD_REQUEST));
+        }
+
+        const selectedToDate = new Date(toDate).setHours(0, 0, 0, 0);
+
+        if (selectedToDate < today || selectedToDate < selectedFromDate) {
+            return next(new ErrorHandler('To date must be in the future and not before the from date', StatusCodes.BAD_REQUEST));
+        }
+
         const leaveApplication = new Leaves({
             employeeId,
             fromDate,
@@ -21,11 +34,12 @@ const applyLeave = async (req, res, next) => {
         const employee = await Employee.findOne({ _id: employeeId });
 
         if (!employee) {
-            return next(new ErrorHandler("Employee not found", StatusCodes.NOT_FOUND));
+            return next(new ErrorHandler('Employee not found', StatusCodes.NOT_FOUND));
         }
 
         employee.leaves.push(savedLeaveApplication._id);
         await employee.save();
+
         res.status(StatusCodes.CREATED).json({
             status: StatusCodes.CREATED,
             success: true,
@@ -35,8 +49,7 @@ const applyLeave = async (req, res, next) => {
     } catch (error) {
         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
-}
-
+};
 
 const updateLeaveStatus = async (req, res, next) => {
     try {
@@ -173,5 +186,6 @@ module.exports = {
     applyLeave,
     updateLeaveStatus,
     getAllLeaves,
-    getLeaveById
+    getLeaveById,
+    deleteLeave
 }

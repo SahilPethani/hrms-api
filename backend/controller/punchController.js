@@ -22,7 +22,7 @@ const punchIn = async (req, res, next) => {
         if (isHoliday) {
             return res.status(StatusCodes.OK).json({
                 status: StatusCodes.OK,
-                success: true,
+                success: false,
                 message: `It's a holiday. Employees don't need to punch in.`,
             });
         }
