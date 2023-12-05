@@ -39,7 +39,7 @@ const getAttendanceDetails = async (req, res, next) => {
                 const excludeLastPunchInTime = lastPunchType === 'punchIn';
 
                 attendanceDetail.checkOutTime = lastPunchTime && !excludeLastPunchInTime
-                    ? lastPunchTime.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' })
+                    ? lastPunchTime?.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' })
                     : '00:00';
                 attendanceDetail.checkInTime = firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
 
@@ -48,7 +48,7 @@ const getAttendanceDetails = async (req, res, next) => {
                     attendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHours);
 
                     const overtimeStartTime = new Date(attendanceRecord.date).setHours(18, 30, 0, 0); // 6:30 PM
-                    const lastPunchOut = lastPunchTime.getTime();
+                    const lastPunchOut = lastPunchTime?.getTime();
 
                     if (lastPunchOut > overtimeStartTime) {
                         const overtimeMinutes = (lastPunchOut - overtimeStartTime) / (1000 * 60);
