@@ -2,10 +2,11 @@ const { StatusCodes } = require("http-status-codes");
 const ErrorHander = require("../middleware/errorhander");
 
 const Holiday = require("../models/holidayModel");
+const { addPunchForHoliday } = require("./punchController");
 
 const addHoliday = async (req, res, next) => {
     try {
-        const { holiday_no, holiday_name, holiday_date, detail,status } = req.body;
+        const { holiday_no, holiday_name, holiday_date, detail, status } = req.body;
 
         if (!holiday_no || !holiday_name || !holiday_date) {
             return next(new ErrorHander("Holiday number, name, and date are required", StatusCodes.BAD_REQUEST));
@@ -35,7 +36,7 @@ const addHoliday = async (req, res, next) => {
         });
 
         const savedHoliday = await holiday.save();
-
+        addPunchForHoliday(formattedHolidayDate)
         return res.status(StatusCodes.CREATED).json({
             status: StatusCodes.CREATED,
             success: true,
@@ -92,7 +93,7 @@ const getAllHolidaysEmployee = async (req, res, next) => {
         const page = parseInt(req.query.page_no) || 1;
         const perPage = parseInt(req.query.items_per_page) || 10;
         const search_text = req.query.search_text || '';
-        
+
         // Updated query to include status: 1
         const query = {
             $and: [
