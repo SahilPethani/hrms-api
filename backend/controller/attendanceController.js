@@ -48,11 +48,13 @@ const getAttendanceDetails = async (req, res, next) => {
                     attendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHours);
 
                     const overtimeStartTime = new Date(attendanceRecord.date).setHours(18, 30, 0, 0); // 6:30 PM
-                    const lastPunchOut = lastPunchTime?.getTime();
+                    const lastPunchOut = lastPunchTime !== "00:00" ? lastPunchTime.getTime() : "00:00"
 
-                    if (lastPunchOut > overtimeStartTime) {
-                        const overtimeMinutes = (lastPunchOut - overtimeStartTime) / (1000 * 60);
-                        attendanceDetail.overtime = formatTotalWorkingHours(overtimeMinutes / 60); // Convert minutes to hours
+                    if (lastPunchOut !== "00:00") {
+                        if (lastPunchOut > overtimeStartTime) {
+                            const overtimeMinutes = (lastPunchOut - overtimeStartTime) / (1000 * 60);
+                            attendanceDetail.overtime = formatTotalWorkingHours(overtimeMinutes / 60); // Convert minutes to hours
+                        }
                     }
                 }
 
