@@ -22,8 +22,8 @@ const getAttendanceDetails = async (req, res, next) => {
 
             const attendanceDetail = {
                 date,
-                checkInTime: null,
-                checkOutTime: null,
+                checkInTime: '00:00',
+                checkOutTime: '00:00',
                 breakTime: '00:00',
                 totalWorkingHours: '00:00',
                 present: false,
