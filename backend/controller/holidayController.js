@@ -3,6 +3,8 @@ const ErrorHander = require("../middleware/errorhander");
 
 const Holiday = require("../models/holidayModel");
 const { addPunchForHoliday } = require("./punchController");
+const Attendance = require("../models/attendanceModel");
+const Employee = require("../models/employeeModel");
 
 const addHoliday = async (req, res, next) => {
     try {
@@ -132,8 +134,6 @@ const getAllHolidaysEmployee = async (req, res, next) => {
     }
 };
 
-
-
 const getHolidayById = async (req, res, next) => {
     try {
         const holidayId = req.params.id;
@@ -201,6 +201,29 @@ const updateHoliday = async (req, res, next) => {
     }
 };
 
+// const deleteHoliday = async (req, res, next) => {
+//     try {
+//         const holidayId = req.params.id;
+
+//         const existingHoliday = await Holiday.findById(holidayId);
+
+//         if (!existingHoliday) {
+//             return next(new ErrorHander(`Holiday not found with id ${holidayId}`, StatusCodes.NOT_FOUND));
+//         }
+
+//         const deletedHoliday = await Holiday.findByIdAndDelete(holidayId);
+
+//         return res.status(StatusCodes.OK).json({
+//             status: StatusCodes.OK,
+//             success: true,
+//             message: "Holiday deleted successfully",
+//             data: deletedHoliday,
+//         });
+//     } catch (error) {
+//         return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
+//     }
+// };
+
 const deleteHoliday = async (req, res, next) => {
     try {
         const holidayId = req.params.id;
@@ -211,6 +234,25 @@ const deleteHoliday = async (req, res, next) => {
             return next(new ErrorHander(`Holiday not found with id ${holidayId}`, StatusCodes.NOT_FOUND));
         }
 
+        const holidayDate = new Date(existingHoliday.holiday_date);
+
+        await Attendance.deleteMany({
+            date: {
+                $gte: new Date(holidayDate),
+                $lt: new Date(holidayDate.getTime() + 24 * 60 * 60 * 1000), 
+            },
+        });
+
+        await Employee.updateMany(
+            { 'attendances.date': new Date(holidayDate) },
+            {
+                $pull: {
+                    attendances: { date: new Date(holidayDate) }
+                }
+            }
+        );
+
+        // Delete the holiday
         const deletedHoliday = await Holiday.findByIdAndDelete(holidayId);
 
         return res.status(StatusCodes.OK).json({
@@ -223,6 +265,7 @@ const deleteHoliday = async (req, res, next) => {
         return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
+
 
 
 const getCurrentMonthHolidays = async (req, res, next) => {

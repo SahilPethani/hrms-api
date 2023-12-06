@@ -130,7 +130,7 @@ const getLeaveById = async (req, res, next) => {
             path: 'employeeId',
             model: 'Employee',
             select: 'first_name last_name avatar userId designation',
-        });;
+        });
 
         if (!leave) {
             return next(new ErrorHandler('Leave not found', StatusCodes.NOT_FOUND));
