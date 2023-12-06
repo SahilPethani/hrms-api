@@ -547,6 +547,9 @@ const getEmployeeAttendanceDetails = async (req, res, next) => {
             detail.employeeId.equals(employee._id)
         )?.punches || [];
 
+        const present = punches.some(punch => punch.type === 'punchIn' ? true : false);
+        const status = punches.some(punch => punch.type);
+
         let checkInTime = '00:00';
         let checkOutTime = '00:00';
         let breakTime = '00:00';
@@ -599,7 +602,8 @@ const getEmployeeAttendanceDetails = async (req, res, next) => {
                 totalWorkingHours,
                 today_activity: {
                     date: employeeAttendanceRecord.date,
-                    present: 1,
+                    present,
+                    status,
                     punches,
                     _id: employeeAttendanceRecord._id,
                 },
@@ -731,8 +735,6 @@ const getEmployeeAttendanceList = async (req, res, next) => {
         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
-
-
 
 const getWeeklyEmployeeAttendanceCount = async (req, res, next) => {
     try {
