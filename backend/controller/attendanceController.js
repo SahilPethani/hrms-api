@@ -548,7 +548,7 @@ const getEmployeeAttendanceDetails = async (req, res, next) => {
         )?.punches || [];
 
         const present = punches.some(punch => punch.type === 'punchIn' ? true : false);
-        const status = punches.some(punch => punch.type);
+        const status = punches.some(punch => punch.type === 'punchIn' ? "punchIn" : punch.type === 'holiday' && "holiday");
 
         let checkInTime = '00:00';
         let checkOutTime = '00:00';
