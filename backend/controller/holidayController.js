@@ -201,29 +201,6 @@ const updateHoliday = async (req, res, next) => {
     }
 };
 
-// const deleteHoliday = async (req, res, next) => {
-//     try {
-//         const holidayId = req.params.id;
-
-//         const existingHoliday = await Holiday.findById(holidayId);
-
-//         if (!existingHoliday) {
-//             return next(new ErrorHander(`Holiday not found with id ${holidayId}`, StatusCodes.NOT_FOUND));
-//         }
-
-//         const deletedHoliday = await Holiday.findByIdAndDelete(holidayId);
-
-//         return res.status(StatusCodes.OK).json({
-//             status: StatusCodes.OK,
-//             success: true,
-//             message: "Holiday deleted successfully",
-//             data: deletedHoliday,
-//         });
-//     } catch (error) {
-//         return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
-//     }
-// };
-
 const deleteHoliday = async (req, res, next) => {
     try {
         const holidayId = req.params.id;
@@ -239,7 +216,7 @@ const deleteHoliday = async (req, res, next) => {
         await Attendance.deleteMany({
             date: {
                 $gte: new Date(holidayDate),
-                $lt: new Date(holidayDate.getTime() + 24 * 60 * 60 * 1000), 
+                $lt: new Date(holidayDate.getTime() + 24 * 60 * 60 * 1000),
             },
         });
 
@@ -266,23 +243,17 @@ const deleteHoliday = async (req, res, next) => {
     }
 };
 
-
-
 const getCurrentMonthHolidays = async (req, res, next) => {
     try {
-        // Get the current date and time in India timezone
         const options = { timeZone: 'Asia/Kolkata' };
         const indiaDate = new Date().toLocaleString('en-US', options);
 
-        // Extract the current month and year
-        const currentMonth = new Date(indiaDate).getMonth() + 1; // Note: Months are zero-indexed
+        const currentMonth = new Date(indiaDate).getMonth() + 1;
         const currentYear = new Date(indiaDate).getFullYear();
 
-        // Set the start and end date for the current month
         const startDate = new Date(`${currentYear}-${currentMonth}-01T00:00:00.000Z`);
         const endDate = new Date(new Date(currentYear, currentMonth, 0).setHours(23, 59, 59, 999));
 
-        // Query holidays within the current month
         const currentMonthHolidays = await Holiday.find({
             holiday_date: { $gte: startDate, $lte: endDate },
         });
@@ -296,7 +267,6 @@ const getCurrentMonthHolidays = async (req, res, next) => {
         return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
-
 
 module.exports = {
     addHoliday,

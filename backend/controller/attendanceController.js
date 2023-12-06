@@ -709,8 +709,8 @@ const getEmployeeAttendanceList = async (req, res, next) => {
 
 const getWeeklyEmployeeAttendanceCount = async (req, res, next) => {
     try {
-        const currentDate = moment().startOf('isoWeek'); 
-        const endDate = currentDate.clone().add(6, 'days'); 
+        const currentDate = moment().startOf('isoWeek');
+        const endDate = currentDate.clone().add(6, 'days');
 
         const employeeAttendanceCounts = [];
 
@@ -761,7 +761,7 @@ const getAllAttendance = async (req, res, next) => {
             model: 'Employee',
             select: 'first_name last_name avatar userId designation join_date ',
         });
-        
+
         return res.status(StatusCodes.OK).json({
             status: StatusCodes.OK,
             success: true,

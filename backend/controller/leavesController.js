@@ -1,6 +1,6 @@
 const { StatusCodes } = require("http-status-codes");
 const Leaves = require("../models/leavesModel");
-const Employee = require("../models/employeeModel"); 
+const Employee = require("../models/employeeModel");
 const ErrorHandler = require("../middleware/errorhander");
 
 const applyLeave = async (req, res, next) => {
@@ -66,7 +66,7 @@ const updateLeaveStatus = async (req, res, next) => {
 
         leave.status = newStatus;
         await leave.save();
-     
+
         res.status(StatusCodes.OK).json({
             status: StatusCodes.OK,
             success: true,
@@ -150,14 +150,10 @@ const getLeaveById = async (req, res, next) => {
 const deleteLeave = async (req, res, next) => {
     try {
         const leaveId = req.params.id;
-
-        // Find the leave to be deleted
         const leave = await Leaves.findById(leaveId);
         if (!leave) {
             return next(new ErrorHandler('Leave not found', StatusCodes.NOT_FOUND));
         }
-
-        // Find the employee associated with the leave
         const employee = await Employee.findOne({ _id: leave.employeeId });
         if (!employee) {
             return next(new ErrorHandler('Employee not found', StatusCodes.NOT_FOUND));
