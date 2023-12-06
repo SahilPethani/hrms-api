@@ -186,7 +186,7 @@ const addPunchForHoliday = async (date) => {
                                 present: 0,
                                 punches: [{
                                     type: "holiday",
-                                    punch_time: "00:00",
+                                    punch_time: date,
                                     note: "",
                                 }],
                             },
@@ -201,7 +201,7 @@ const addPunchForHoliday = async (date) => {
                     present: 0,
                     punches: [{
                         type: "holiday",
-                        punch_time: "00:00",
+                        punch_time: date,
                         note: "",
                     }],
                 };
@@ -215,7 +215,7 @@ const addPunchForHoliday = async (date) => {
                 if (employeeAttendanceDetailsIndex !== -1) {
                     todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches.push({
                         type: "holiday",
-                        punch_time: "",
+                        punch_time: date,
                         note: "",
                     });
                     todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].present = 0;
@@ -229,7 +229,7 @@ const addPunchForHoliday = async (date) => {
                     present: 0,
                     punches: [{
                         type: "holiday",
-                        punch_time: "00:00",
+                        punch_time: date,
                         note: "",
                     }],
                 };
