@@ -649,14 +649,16 @@ const getEmployeeAttendanceDetails = async (req, res, next) => {
         if (punches.length > 0) {
             const firstPunch = new Date(punches[0]?.punch_time);
             const punchOuts = punches.filter(punch => punch.type === 'punchOut');
-            const lastPunchOut = punchOuts.length > 0 ?  new Date(punchOuts[punchOuts.length - 1].punch_time) : "00:00";
+            const lastPunchOut = punchOuts.length > 0 ? new Date(punchOuts[punchOuts.length - 1].punch_time) : "00:00";
+            const lastPunchType = punches[punches.length - 1].type;
+            const excludeLastPunchInTime = lastPunchType === 'punchIn';
             // const lastPunchTime = lastPunchOut ? new Date(lastPunchOut) : null;
             // const lastPunchOut = punches
             //     .filter(punch => punch?.type === 'punchOut')
             //     .map(punch => new Date(punch?.punch_time))
             //     .pop() || "00:00";
 
-            checkOutTime = lastPunchOut !== "00:00"
+            checkOutTime = !excludeLastPunchInTime
                 ? (lastPunchOut instanceof Date && !isNaN(lastPunchOut.getTime())
                     ? lastPunchOut.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' })
                     : '00:00'
@@ -665,7 +667,7 @@ const getEmployeeAttendanceDetails = async (req, res, next) => {
 
             checkInTime = firstPunch ? firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' }) : '00:00';
 
-            if (lastPunchOut !== "00:00") {
+            if (!excludeLastPunchInTime) {
                 const totalHours = (lastPunchOut - firstPunch) / (1000 * 60 * 60);
 
                 if (!isNaN(totalHours) && isFinite(totalHours)) {
