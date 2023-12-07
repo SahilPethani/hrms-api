@@ -458,7 +458,7 @@ const getAttendanceSheet = async (req, res, next) => {
 
                 // Check if the employee has attendance on this specific day
                 const isPresent = attendanceData ? attendanceData.present === 1 : false;
-                const isAbsent = isSunday ? false : !isPresent;
+                const isAbsent = isSunday ? isHoliday ? false : false : !isPresent;
 
                 return {
                     date: currentDateInLoop.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }),
