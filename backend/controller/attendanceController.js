@@ -651,7 +651,7 @@ const getEmployeeAttendanceDetails = async (req, res, next) => {
             const lastPunchOut = punches
                 .filter(punch => punch?.type === 'punchOut')
                 .map(punch => new Date(punch?.punch_time))
-                .pop() || new Date("00:00");
+                .pop() || "00:00";
 
             checkOutTime = lastPunchOut !== "00:00"
                 ? (lastPunchOut instanceof Date && !isNaN(lastPunchOut.getTime())
