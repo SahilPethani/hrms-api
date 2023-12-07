@@ -648,10 +648,13 @@ const getEmployeeAttendanceDetails = async (req, res, next) => {
 
         if (punches.length > 0) {
             const firstPunch = new Date(punches[0]?.punch_time);
-            const lastPunchOut = punches
-                .filter(punch => punch?.type === 'punchOut')
-                .map(punch => new Date(punch?.punch_time))
-                .pop() || "00:00";
+            const punchOuts = punches.filter(punch => punch.type === 'punchOut');
+            const lastPunchOut = punchOuts.length > 0 ?  new Date(punchOuts[punchOuts.length - 1].punch_time) : "00:00";
+            // const lastPunchTime = lastPunchOut ? new Date(lastPunchOut) : null;
+            // const lastPunchOut = punches
+            //     .filter(punch => punch?.type === 'punchOut')
+            //     .map(punch => new Date(punch?.punch_time))
+            //     .pop() || "00:00";
 
             checkOutTime = lastPunchOut !== "00:00"
                 ? (lastPunchOut instanceof Date && !isNaN(lastPunchOut.getTime())
