@@ -6,6 +6,117 @@ const { getDayName, formatTotalWorkingHours } = require("../utils/helper");
 const Holiday = require("../models/holidayModel");
 const moment = require('moment');
 
+// const getAttendanceDetails = async (req, res, next) => {
+//     try {
+//         const employeeId = req.params.id;
+
+//         let employee = await Employee.findById(employeeId);
+//         if (!employee) {
+//             return next(new ErrorHandler(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
+//         }
+
+//         const monthlyAttendanceDetails = [];
+//         employee.attendances.forEach(attendanceRecord => {
+//             const date = attendanceRecord.date.toISOString().split('T')[0];
+//             const punches = attendanceRecord.punches;
+
+//             const attendanceDetail = {
+//                 date,
+//                 checkInTime: '00:00',
+//                 checkOutTime: '00:00',
+//                 totalWorkingHours: '00:00',
+//                 present: false,
+//                 overtime: '00:00'
+//             };
+
+//             if (punches.length > 0) {
+//                 const firstPunch = new Date(punches[0]?.punch_time);
+//                 const punchOuts = punches.filter(punch => punch?.type === 'punchOut');
+//                 const lastPunchOut = punchOuts?.length > 0 ? punchOuts[punchOuts?.length - 1]?.punch_time : "00:00";
+//                 const lastPunchTime = lastPunchOut !== "00:00" ? new Date(lastPunchOut) : "00:00";
+//                 const lastPunchType = punches[punches.length - 1].type;
+//                 const excludeLastPunchInTime = lastPunchType === 'punchIn';
+
+//                 attendanceDetail.checkOutTime = lastPunchTime && !excludeLastPunchInTime
+//                     ? lastPunchTime !== "00:00" ? lastPunchTime.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }) : "00:00"
+//                     : '00:00';
+//                 attendanceDetail.checkInTime = firstPunch ? firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' }) : "00:00"
+
+//                 if (!excludeLastPunchInTime) {
+//                     if (lastPunchTime !== "00:00") {
+//                         const totalHours = (lastPunchTime - firstPunch) / (1000 * 60 * 60);
+//                         attendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHours);
+//                     }
+
+//                     const overtimeStartTime = new Date(attendanceRecord.date).setHours(18, 30, 0, 0); // 6:30 PM
+//                     const lastPunchOut = lastPunchTime !== "00:00" ? lastPunchTime.getTime() : "00:00"
+
+//                     if (lastPunchOut !== "00:00") {
+//                         if (lastPunchOut > overtimeStartTime) {
+//                             const overtimeMinutes = (lastPunchOut - overtimeStartTime) / (1000 * 60);
+//                             attendanceDetail.overtime = formatTotalWorkingHours(overtimeMinutes / 60); // Convert minutes to hours
+//                         }
+//                     }
+//                 }
+
+//                 // if (punches.length > 0) {
+//                 //     const breakStartTime = new Date(attendanceRecord.date).setHours(12, 45, 0, 0); // 12:45 PM
+//                 //     const breakEndTime = new Date(attendanceRecord.date).setHours(13, 50, 0, 0); // 1:45 PM
+//                 //     const breakPunchOuts = punches.filter(
+//                 //         punch => punch.type === 'punchOut' && punch.punch_time >= breakStartTime && punch.punch_time <= breakEndTime
+//                 //     );
+//                 //     if (breakPunchOuts.length > 0) {
+//                 //         const breakPunchIn = punches.find(
+//                 //             punch => punch.type === 'punchIn' && punch.punch_time >= breakStartTime && punch.punch_time <= breakEndTime
+//                 //         );
+
+//                 //         if (breakPunchIn) {
+//                 //             attendanceDetail.breakTime = (breakPunchOuts[0].punch_time - breakPunchIn.punch_time) / (1000 * 60 * 60);
+//                 //         }
+//                 //     }
+//                 // }
+
+//                 attendanceDetail.present = punches.some(punch => punch.type === 'punchIn' ? true : false);
+//             }
+//             monthlyAttendanceDetails.push(attendanceDetail);
+//         });
+
+//         const totalWorkingHours = monthlyAttendanceDetails.reduce((sum, attendance) => sum + parseFloat(attendance.totalWorkingHours), 0);
+//         const totalCheckInTime = monthlyAttendanceDetails.reduce((sum, attendance) => sum + (attendance.checkInTime ? new Date(`2000-01-01 ${attendance.checkInTime}`).getTime() : 0), 0);
+//         const totalCheckOutTime = monthlyAttendanceDetails.reduce((sum, attendance) => sum + (attendance.checkOutTime ? new Date(`2000-01-01 ${attendance.checkOutTime}`).getTime() : 0), 0);
+
+//         const averageWorkingHours = (totalWorkingHours / monthlyAttendanceDetails.length).toFixed(2);
+//         const averageInTime = new Date(totalCheckInTime / monthlyAttendanceDetails.length).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
+//         const averageOutTime = totalCheckOutTime ? new Date(totalCheckOutTime / monthlyAttendanceDetails.length).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' }) : "00:00"
+
+//         return res.status(StatusCodes.OK).json({
+//             status: StatusCodes.OK,
+//             success: true,
+//             message: `Attendance details retrieved successfully`,
+//             data: {
+//                 employee: {
+//                     _id: employee._id,
+//                     firstName: employee.first_name,
+//                     lastName: employee.last_name,
+//                     userId: employee.user_id,
+//                     avatar: employee.avatar,
+//                     designation: employee.designation,
+//                     joiningDate: employee.join_date,
+//                 },
+//                 averageWorkingHours,
+//                 averageInTime,
+//                 averageOutTime,
+//                 attendessdetail: monthlyAttendanceDetails,
+//             },
+//         });
+//     } catch (error) {
+//         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
+//     }
+// };
+
+
+// Add this function at the beginning of your code
+
 const getAttendanceDetails = async (req, res, next) => {
     try {
         const employeeId = req.params.id;
@@ -16,6 +127,10 @@ const getAttendanceDetails = async (req, res, next) => {
         }
 
         const monthlyAttendanceDetails = [];
+        let totalAbsentDays = 0;
+        let totalPresentDays = 0;
+        let totalHolidayDays = 0;
+
         employee.attendances.forEach(attendanceRecord => {
             const date = attendanceRecord.date.toISOString().split('T')[0];
             const punches = attendanceRecord.punches;
@@ -25,69 +140,63 @@ const getAttendanceDetails = async (req, res, next) => {
                 checkInTime: '00:00',
                 checkOutTime: '00:00',
                 totalWorkingHours: '00:00',
+                type: '',
                 present: false,
                 overtime: '00:00'
             };
 
             if (punches.length > 0) {
                 const firstPunch = new Date(punches[0]?.punch_time);
-                const punchOuts = punches.filter(punch => punch?.type === 'punchOut');
-                const lastPunchOut = punchOuts?.length > 0 ? punchOuts[punchOuts?.length - 1]?.punch_time : "00:00";
-                const lastPunchTime = lastPunchOut !== "00:00" ? new Date(lastPunchOut) : "00:00";
-                const lastPunchType = punches[punches.length - 1].type;
-                const excludeLastPunchInTime = lastPunchType === 'punchIn';
+                const lastPunchOut = punches
+                    .filter(punch => punch?.type === 'punchOut')
+                    .map(punch => new Date(punch?.punch_time))
+                    .pop() || new Date("00:00");
 
-                attendanceDetail.checkOutTime = lastPunchTime && !excludeLastPunchInTime
-                    ? lastPunchTime !== "00:00" ? lastPunchTime.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }) : "00:00"
+                attendanceDetail.checkOutTime = lastPunchOut !== "00:00"
+                    ? (lastPunchOut instanceof Date && !isNaN(lastPunchOut.getTime())
+                        ? lastPunchOut.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' })
+                        : '00:00'
+                    )
                     : '00:00';
-                attendanceDetail.checkInTime = firstPunch ? firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' }) : "00:00"
 
-                if (!excludeLastPunchInTime) {
-                    if (lastPunchTime !== "00:00") {
-                        const totalHours = (lastPunchTime - firstPunch) / (1000 * 60 * 60);
+                attendanceDetail.checkInTime = firstPunch ? firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' }) : '00:00';
+
+                if (lastPunchOut !== "00:00") {
+                    const totalHours = (lastPunchOut - firstPunch) / (1000 * 60 * 60);
+
+                    if (!isNaN(totalHours) && isFinite(totalHours)) {
                         attendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHours);
-                    }
-
-                    const overtimeStartTime = new Date(attendanceRecord.date).setHours(18, 30, 0, 0); // 6:30 PM
-                    const lastPunchOut = lastPunchTime !== "00:00" ? lastPunchTime.getTime() : "00:00"
-
-                    if (lastPunchOut !== "00:00") {
-                        if (lastPunchOut > overtimeStartTime) {
-                            const overtimeMinutes = (lastPunchOut - overtimeStartTime) / (1000 * 60);
-                            attendanceDetail.overtime = formatTotalWorkingHours(overtimeMinutes / 60); // Convert minutes to hours
-                        }
+                    } else {
+                        attendanceDetail.totalWorkingHours = '00:00';
                     }
                 }
 
-                // if (punches.length > 0) {
-                //     const breakStartTime = new Date(attendanceRecord.date).setHours(12, 45, 0, 0); // 12:45 PM
-                //     const breakEndTime = new Date(attendanceRecord.date).setHours(13, 50, 0, 0); // 1:45 PM
-                //     const breakPunchOuts = punches.filter(
-                //         punch => punch.type === 'punchOut' && punch.punch_time >= breakStartTime && punch.punch_time <= breakEndTime
-                //     );
-                //     if (breakPunchOuts.length > 0) {
-                //         const breakPunchIn = punches.find(
-                //             punch => punch.type === 'punchIn' && punch.punch_time >= breakStartTime && punch.punch_time <= breakEndTime
-                //         );
+                const overtimeStartTime = new Date(attendanceRecord.date).setHours(18, 30, 0, 0); // 6:30 PM
+                const lastPunchOutTime = lastPunchOut.getTime();
 
-                //         if (breakPunchIn) {
-                //             attendanceDetail.breakTime = (breakPunchOuts[0].punch_time - breakPunchIn.punch_time) / (1000 * 60 * 60);
-                //         }
-                //     }
-                // }
+                if (lastPunchOutTime > overtimeStartTime) {
+                    const overtimeMinutes = (lastPunchOutTime - overtimeStartTime) / (1000 * 60);
+                    attendanceDetail.overtime = formatTotalWorkingHours(overtimeMinutes / 60); // Convert minutes to hours
+                }
 
-                attendanceDetail.present = punches.some(punch => punch.type === 'punchIn' ? true : false);
+                if (punches.some(punch => punch.type === 'holiday')) {
+                    attendanceDetail.present = false;
+                    attendanceDetail.type = "holiday"
+                    totalHolidayDays++;
+                } else {
+                    attendanceDetail.present = true; 
+                    attendanceDetail.type = "present"
+
+                }
             }
+            if (!attendanceDetail.present) {
+                totalAbsentDays++;
+            } else {
+                totalPresentDays++;
+            }
+
             monthlyAttendanceDetails.push(attendanceDetail);
         });
-
-        const totalWorkingHours = monthlyAttendanceDetails.reduce((sum, attendance) => sum + parseFloat(attendance.totalWorkingHours), 0);
-        const totalCheckInTime = monthlyAttendanceDetails.reduce((sum, attendance) => sum + (attendance.checkInTime ? new Date(`2000-01-01 ${attendance.checkInTime}`).getTime() : 0), 0);
-        const totalCheckOutTime = monthlyAttendanceDetails.reduce((sum, attendance) => sum + (attendance.checkOutTime ? new Date(`2000-01-01 ${attendance.checkOutTime}`).getTime() : 0), 0);
-
-        const averageWorkingHours = (totalWorkingHours / monthlyAttendanceDetails.length).toFixed(2);
-        const averageInTime = new Date(totalCheckInTime / monthlyAttendanceDetails.length).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
-        const averageOutTime = totalCheckOutTime ? new Date(totalCheckOutTime / monthlyAttendanceDetails.length).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' }) : "00:00"
 
         return res.status(StatusCodes.OK).json({
             status: StatusCodes.OK,
@@ -103,9 +212,9 @@ const getAttendanceDetails = async (req, res, next) => {
                     designation: employee.designation,
                     joiningDate: employee.join_date,
                 },
-                averageWorkingHours,
-                averageInTime,
-                averageOutTime,
+                totalAbsentDays,
+                totalPresentDays,
+                totalHolidayDays,
                 attendessdetail: monthlyAttendanceDetails,
             },
         });
@@ -178,6 +287,108 @@ const getEmployeeAttendanceSummary = async (req, res, next) => {
     }
 };
 
+// const getAttendanceSheet = async (req, res, next) => {
+//     try {
+//         const monthNameParam = req.query.monthName;
+
+//         if (!monthNameParam) {
+//             return res.status(StatusCodes.BAD_REQUEST).json({
+//                 status: StatusCodes.BAD_REQUEST,
+//                 success: false,
+//                 message: "Month name is required",
+//             });
+//         }
+
+//         const currentDate = new Date();
+
+//         // Convert month name to a number (0-indexed, where January is 0)
+//         const monthIndex = new Date(`${monthNameParam} 1, ${currentDate.getFullYear()}`).getMonth();
+
+//         if (isNaN(monthIndex) || monthIndex < 0 || monthIndex > 11) {
+//             return res.status(StatusCodes.BAD_REQUEST).json({
+//                 status: StatusCodes.BAD_REQUEST,
+//                 success: false,
+//                 message: "Invalid month name",
+//             });
+//         }
+
+//         const firstDayOfMonth = new Date(currentDate.getFullYear(), monthIndex, 1);
+//         const lastDayOfMonth = new Date(currentDate.getFullYear(), monthIndex + 1, 0);
+
+//         const startDate = firstDayOfMonth.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+//         const endDate = lastDayOfMonth.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+
+//         const filter = {
+//             attendances: {
+//                 $elemMatch: {
+//                     date: {
+//                         $gte: new Date(startDate),
+//                         $lte: new Date(endDate),
+//                     },
+//                 },
+//             },
+//         };
+
+//         const Holidays = await Holiday.find();
+//         const employees = await Employee.find(filter).lean();
+
+//         const attendanceSheet = employees.map(employee => {
+//             const attendanceDetails = Array.from({ length: lastDayOfMonth.getDate() }, (_, day) => {
+//                 const currentDateInLoop = new Date(
+//                     lastDayOfMonth.getFullYear(),
+//                     lastDayOfMonth.getMonth(),
+//                     day + 1
+//                 );
+//                 const isSunday = currentDateInLoop.getDay() === 0;
+
+//                 // Check for attendance on the specific day
+//                 const attendanceData = employee.attendances.find(attendance =>
+//                     new Date(attendance.date).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }) === currentDateInLoop.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
+//                 );
+
+//                 const isHoliday = Holidays.find((date) => {
+//                     const holidayDateUTC = new Date(date.holiday_date);
+//                     const holidayDateLocal = holidayDateUTC.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+//                     const currentDateInLoopLocal = currentDateInLoop.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+//                     return holidayDateLocal === currentDateInLoopLocal;
+//                 });
+
+//                 // Check if the employee has attendance on this specific day
+//                 const isPresent = attendanceData ? attendanceData.present === 1 : false;
+//                 const isAbsent = isSunday ? false : !isPresent;
+
+//                 return {
+//                     date: currentDateInLoop.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }),
+//                     dayName: getDayName(currentDateInLoop.getDay()),
+//                     present: isPresent,
+//                     absent: isAbsent,
+//                     holiday: isHoliday ? true : isSunday,
+//                 };
+//             });
+
+//             return {
+//                 employee: {
+//                     _id: employee._id,
+//                     firstName: employee.first_name,
+//                     lastName: employee.last_name,
+//                     userId: employee.user_id,
+//                     avatar: employee.avatar,
+//                 },
+//                 attendanceDetails,
+//             };
+//         });
+
+//         return res.status(StatusCodes.OK).json({
+//             status: StatusCodes.OK,
+//             success: true,
+//             message: "Attendance sheet retrieved successfully",
+//             data: attendanceSheet,
+//         });
+//     } catch (error) {
+//         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
+//     }
+// };
+
 const getAttendanceSheet = async (req, res, next) => {
     try {
         const monthNameParam = req.query.monthName;
@@ -232,17 +443,23 @@ const getAttendanceSheet = async (req, res, next) => {
                 );
                 const isSunday = currentDateInLoop.getDay() === 0;
 
-                // Check for attendance on the specific day
-                const attendanceData = employee.attendances.find(attendance =>
-                    new Date(attendance.date).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }) === currentDateInLoop.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
-                );
-
+                // Check if the current date is a holiday
                 const isHoliday = Holidays.find((date) => {
                     const holidayDateUTC = new Date(date.holiday_date);
                     const holidayDateLocal = holidayDateUTC.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
                     const currentDateInLoopLocal = currentDateInLoop.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
                     return holidayDateLocal === currentDateInLoopLocal;
                 });
+
+                // Skip the date if it's a holiday
+                if (isHoliday) {
+                    return null;
+                }
+
+                // Check for attendance on the specific day
+                const attendanceData = employee.attendances.find(attendance =>
+                    new Date(attendance.date).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }) === currentDateInLoop.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
+                );
 
                 // Check if the employee has attendance on this specific day
                 const isPresent = attendanceData ? attendanceData.present === 1 : false;
@@ -253,9 +470,9 @@ const getAttendanceSheet = async (req, res, next) => {
                     dayName: getDayName(currentDateInLoop.getDay()),
                     present: isPresent,
                     absent: isAbsent,
-                    holiday: isHoliday ? true : isSunday,
+                    holiday: isSunday || isHoliday, // Consider Sundays and holidays as holidays
                 };
-            });
+            }).filter(detail => detail !== null);
 
             return {
                 employee: {
@@ -279,6 +496,8 @@ const getAttendanceSheet = async (req, res, next) => {
         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
+
+
 
 const getTodayAttendance = async (req, res, next) => {
     try {
