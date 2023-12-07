@@ -444,17 +444,12 @@ const getAttendanceSheet = async (req, res, next) => {
                 const isSunday = currentDateInLoop.getDay() === 0;
 
                 // Check if the current date is a holiday
-                const isHoliday = Holidays.find((date) => {
+                const isHoliday = Holidays.some((date) => {
                     const holidayDateUTC = new Date(date.holiday_date);
                     const holidayDateLocal = holidayDateUTC.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
                     const currentDateInLoopLocal = currentDateInLoop.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
                     return holidayDateLocal === currentDateInLoopLocal;
                 });
-
-                // Skip the date if it's a holiday
-                if (isHoliday) {
-                    return null;
-                }
 
                 // Check for attendance on the specific day
                 const attendanceData = employee.attendances.find(attendance =>
@@ -470,9 +465,9 @@ const getAttendanceSheet = async (req, res, next) => {
                     dayName: getDayName(currentDateInLoop.getDay()),
                     present: isPresent,
                     absent: isAbsent,
-                    holiday: isSunday || isHoliday, // Consider Sundays and holidays as holidays
+                    holiday: isHoliday || isSunday, // Consider Sundays and holidays as holidays
                 };
-            }).filter(detail => detail !== null);
+            });
 
             return {
                 employee: {
