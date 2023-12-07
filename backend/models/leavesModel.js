@@ -15,9 +15,10 @@ const leavesSchema = new mongoose.Schema({
     enum: ['Casual Leave', 'Sick Leave', 'Marriage Leave', 'Privilege Leave', 'Maternity Leave'],
     required: true
   },
-  halfDay: {
-    type: Boolean,
-    default: false  // Default value is 'no' (0)
+  duration: {
+    type: String,
+    enum: ['Full Day', 'First Half', 'Second Half', 'Multiple Days'],
+    required: true
   },
   status: {
     type: String,

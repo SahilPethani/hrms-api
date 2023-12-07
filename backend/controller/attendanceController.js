@@ -147,38 +147,32 @@ const getAttendanceDetails = async (req, res, next) => {
 
             if (punches.length > 0) {
                 const firstPunch = new Date(punches[0]?.punch_time);
-                const lastPunchOut = punches
-                    .filter(punch => punch?.type === 'punchOut')
-                    .map(punch => new Date(punch?.punch_time))
-                    .pop() || new Date("00:00");
-
-                attendanceDetail.checkOutTime = lastPunchOut !== "00:00"
+                const punchOuts = punches.filter(punch => punch.type === 'punchOut');
+                const lastPunchOut = punchOuts.length > 0 ? new Date(punchOuts[punchOuts.length - 1].punch_time) : "00:00";
+                const lastPunchType = punches[punches.length - 1].type;
+                const excludeLastPunchInTime = lastPunchType === 'punchIn';
+            
+                attendanceDetail.checkOutTime = !excludeLastPunchInTime
                     ? (lastPunchOut instanceof Date && !isNaN(lastPunchOut.getTime())
                         ? lastPunchOut.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' })
                         : '00:00'
                     )
                     : '00:00';
-
                 attendanceDetail.checkInTime = firstPunch ? firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' }) : '00:00';
-
-                if (lastPunchOut !== "00:00") {
+                if (!excludeLastPunchInTime) {
                     const totalHours = (lastPunchOut - firstPunch) / (1000 * 60 * 60);
-
                     if (!isNaN(totalHours) && isFinite(totalHours)) {
                         attendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHours);
                     } else {
                         attendanceDetail.totalWorkingHours = '00:00';
                     }
                 }
-
                 const overtimeStartTime = new Date(attendanceRecord.date).setHours(18, 30, 0, 0); // 6:30 PM
                 const lastPunchOutTime = lastPunchOut.getTime();
-
                 if (lastPunchOutTime > overtimeStartTime) {
                     const overtimeMinutes = (lastPunchOutTime - overtimeStartTime) / (1000 * 60);
                     attendanceDetail.overtime = formatTotalWorkingHours(overtimeMinutes / 60); // Convert minutes to hours
                 }
-
                 if (punches.some(punch => punch.type === 'holiday')) {
                     attendanceDetail.present = false;
                     attendanceDetail.type = "holiday"
@@ -186,7 +180,6 @@ const getAttendanceDetails = async (req, res, next) => {
                 } else {
                     attendanceDetail.present = true;
                     attendanceDetail.type = "present"
-
                 }
             }
             if (!attendanceDetail.present) {
@@ -194,7 +187,6 @@ const getAttendanceDetails = async (req, res, next) => {
             } else {
                 totalPresentDays++;
             }
-
             monthlyAttendanceDetails.push(attendanceDetail);
         });
 
@@ -609,17 +601,14 @@ const getEmployeeAttendanceDetails = async (req, res, next) => {
 
         const currentDateIST = new Date(requestedDate).toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
         const currentDate = new Date(currentDateIST).setHours(0, 0, 0, 0);
-
         let employee = await Employee.findById(employeeId);
         if (!employee) {
             return next(new ErrorHandler(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
         }
-
         const employeeAttendanceRecord = await Attendance.findOne({
             date: currentDate,
             "attendanceDetails.employeeId": employee._id,
         });
-
         if (!employeeAttendanceRecord) {
             return res.status(StatusCodes.OK).json({
                 status: StatusCodes.OK,
@@ -634,37 +623,27 @@ const getEmployeeAttendanceDetails = async (req, res, next) => {
                 },
             });
         }
-
         const punches = employeeAttendanceRecord.attendanceDetails.find(detail =>
             detail.employeeId.equals(employee._id)
         )?.punches || [];
-
         const present = punches.some(punch => punch.type === 'punchIn' ? true : false);
         const status = punches[0]?.type
 
         let checkInTime = '00:00';
         let checkOutTime = '00:00';
         let totalWorkingHours = "00:00";
-
         if (punches.length > 0) {
             const firstPunch = new Date(punches[0]?.punch_time);
             const punchOuts = punches.filter(punch => punch.type === 'punchOut');
             const lastPunchOut = punchOuts.length > 0 ? new Date(punchOuts[punchOuts.length - 1].punch_time) : "00:00";
             const lastPunchType = punches[punches.length - 1].type;
             const excludeLastPunchInTime = lastPunchType === 'punchIn';
-            // const lastPunchTime = lastPunchOut ? new Date(lastPunchOut) : null;
-            // const lastPunchOut = punches
-            //     .filter(punch => punch?.type === 'punchOut')
-            //     .map(punch => new Date(punch?.punch_time))
-            //     .pop() || "00:00";
-
             checkOutTime = !excludeLastPunchInTime
                 ? (lastPunchOut instanceof Date && !isNaN(lastPunchOut.getTime())
                     ? lastPunchOut.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' })
                     : '00:00'
                 )
                 : '00:00';
-
             checkInTime = firstPunch ? firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' }) : '00:00';
 
             if (!excludeLastPunchInTime) {
