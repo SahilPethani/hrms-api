@@ -184,7 +184,7 @@ const getAttendanceDetails = async (req, res, next) => {
                     attendanceDetail.type = "holiday"
                     totalHolidayDays++;
                 } else {
-                    attendanceDetail.present = true; 
+                    attendanceDetail.present = true;
                     attendanceDetail.type = "present"
 
                 }
@@ -287,108 +287,6 @@ const getEmployeeAttendanceSummary = async (req, res, next) => {
     }
 };
 
-// const getAttendanceSheet = async (req, res, next) => {
-//     try {
-//         const monthNameParam = req.query.monthName;
-
-//         if (!monthNameParam) {
-//             return res.status(StatusCodes.BAD_REQUEST).json({
-//                 status: StatusCodes.BAD_REQUEST,
-//                 success: false,
-//                 message: "Month name is required",
-//             });
-//         }
-
-//         const currentDate = new Date();
-
-//         // Convert month name to a number (0-indexed, where January is 0)
-//         const monthIndex = new Date(`${monthNameParam} 1, ${currentDate.getFullYear()}`).getMonth();
-
-//         if (isNaN(monthIndex) || monthIndex < 0 || monthIndex > 11) {
-//             return res.status(StatusCodes.BAD_REQUEST).json({
-//                 status: StatusCodes.BAD_REQUEST,
-//                 success: false,
-//                 message: "Invalid month name",
-//             });
-//         }
-
-//         const firstDayOfMonth = new Date(currentDate.getFullYear(), monthIndex, 1);
-//         const lastDayOfMonth = new Date(currentDate.getFullYear(), monthIndex + 1, 0);
-
-//         const startDate = firstDayOfMonth.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
-//         const endDate = lastDayOfMonth.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
-
-//         const filter = {
-//             attendances: {
-//                 $elemMatch: {
-//                     date: {
-//                         $gte: new Date(startDate),
-//                         $lte: new Date(endDate),
-//                     },
-//                 },
-//             },
-//         };
-
-//         const Holidays = await Holiday.find();
-//         const employees = await Employee.find(filter).lean();
-
-//         const attendanceSheet = employees.map(employee => {
-//             const attendanceDetails = Array.from({ length: lastDayOfMonth.getDate() }, (_, day) => {
-//                 const currentDateInLoop = new Date(
-//                     lastDayOfMonth.getFullYear(),
-//                     lastDayOfMonth.getMonth(),
-//                     day + 1
-//                 );
-//                 const isSunday = currentDateInLoop.getDay() === 0;
-
-//                 // Check for attendance on the specific day
-//                 const attendanceData = employee.attendances.find(attendance =>
-//                     new Date(attendance.date).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }) === currentDateInLoop.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
-//                 );
-
-//                 const isHoliday = Holidays.find((date) => {
-//                     const holidayDateUTC = new Date(date.holiday_date);
-//                     const holidayDateLocal = holidayDateUTC.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
-//                     const currentDateInLoopLocal = currentDateInLoop.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
-//                     return holidayDateLocal === currentDateInLoopLocal;
-//                 });
-
-//                 // Check if the employee has attendance on this specific day
-//                 const isPresent = attendanceData ? attendanceData.present === 1 : false;
-//                 const isAbsent = isSunday ? false : !isPresent;
-
-//                 return {
-//                     date: currentDateInLoop.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }),
-//                     dayName: getDayName(currentDateInLoop.getDay()),
-//                     present: isPresent,
-//                     absent: isAbsent,
-//                     holiday: isHoliday ? true : isSunday,
-//                 };
-//             });
-
-//             return {
-//                 employee: {
-//                     _id: employee._id,
-//                     firstName: employee.first_name,
-//                     lastName: employee.last_name,
-//                     userId: employee.user_id,
-//                     avatar: employee.avatar,
-//                 },
-//                 attendanceDetails,
-//             };
-//         });
-
-//         return res.status(StatusCodes.OK).json({
-//             status: StatusCodes.OK,
-//             success: true,
-//             message: "Attendance sheet retrieved successfully",
-//             data: attendanceSheet,
-//         });
-//     } catch (error) {
-//         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
-//     }
-// };
-
 const getAttendanceSheet = async (req, res, next) => {
     try {
         const monthNameParam = req.query.monthName;
@@ -402,8 +300,6 @@ const getAttendanceSheet = async (req, res, next) => {
         }
 
         const currentDate = new Date();
-
-        // Convert month name to a number (0-indexed, where January is 0)
         const monthIndex = new Date(`${monthNameParam} 1, ${currentDate.getFullYear()}`).getMonth();
 
         if (isNaN(monthIndex) || monthIndex < 0 || monthIndex > 11) {
@@ -442,21 +338,15 @@ const getAttendanceSheet = async (req, res, next) => {
                     day + 1
                 );
                 const isSunday = currentDateInLoop.getDay() === 0;
-
-                // Check if the current date is a holiday
                 const isHoliday = Holidays.some((date) => {
                     const holidayDateUTC = new Date(date.holiday_date);
                     const holidayDateLocal = holidayDateUTC.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
                     const currentDateInLoopLocal = currentDateInLoop.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
                     return holidayDateLocal === currentDateInLoopLocal;
                 });
-
-                // Check for attendance on the specific day
                 const attendanceData = employee.attendances.find(attendance =>
                     new Date(attendance.date).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }) === currentDateInLoop.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
                 );
-
-                // Check if the employee has attendance on this specific day
                 const isPresent = attendanceData ? attendanceData.present === 1 : false;
                 const isAbsent = isSunday ? false : isHoliday ? false : !isPresent;
 
@@ -465,7 +355,7 @@ const getAttendanceSheet = async (req, res, next) => {
                     dayName: getDayName(currentDateInLoop.getDay()),
                     present: isPresent,
                     absent: isAbsent,
-                    holiday: isHoliday || isSunday, // Consider Sundays and holidays as holidays
+                    holiday: isHoliday || isSunday,
                 };
             });
 
@@ -491,8 +381,6 @@ const getAttendanceSheet = async (req, res, next) => {
         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
-
-
 
 const getTodayAttendance = async (req, res, next) => {
     try {
@@ -760,20 +648,28 @@ const getEmployeeAttendanceDetails = async (req, res, next) => {
 
         if (punches.length > 0) {
             const firstPunch = new Date(punches[0]?.punch_time);
-            const punchOuts = punches.filter(punch => punch.type === 'punchOut');
-            const lastPunchOut = punchOuts.length > 0 ? punchOuts[punchOuts.length - 1].punch_time : null;
-            const lastPunchTime = lastPunchOut ? new Date(lastPunchOut) : null;
-            const lastPunchType = punches[punches.length - 1].type;
-            const excludeLastPunchInTime = lastPunchType === 'punchIn';
+            const lastPunchOut = punches
+                .filter(punch => punch?.type === 'punchOut')
+                .map(punch => new Date(punch?.punch_time))
+                .pop() || new Date("00:00");
 
-            checkOutTime = lastPunchTime && !excludeLastPunchInTime
-                ? lastPunchTime.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' })
+            checkOutTime = lastPunchOut !== "00:00"
+                ? (lastPunchOut instanceof Date && !isNaN(lastPunchOut.getTime())
+                    ? lastPunchOut.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' })
+                    : '00:00'
+                )
                 : '00:00';
-            checkInTime = firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
 
-            if (!excludeLastPunchInTime) {
-                const totalHours = (lastPunchTime - firstPunch) / (1000 * 60 * 60);
-                totalWorkingHours = formatTotalWorkingHours(totalHours);
+            checkInTime = firstPunch ? firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' }) : '00:00';
+
+            if (lastPunchOut !== "00:00") {
+                const totalHours = (lastPunchOut - firstPunch) / (1000 * 60 * 60);
+
+                if (!isNaN(totalHours) && isFinite(totalHours)) {
+                    totalWorkingHours = formatTotalWorkingHours(totalHours);
+                } else {
+                    totalWorkingHours = '00:00';
+                }
             }
         }
 
