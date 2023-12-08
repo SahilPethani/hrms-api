@@ -6,117 +6,6 @@ const { getDayName, formatTotalWorkingHours } = require("../utils/helper");
 const Holiday = require("../models/holidayModel");
 const moment = require('moment');
 
-// const getAttendanceDetails = async (req, res, next) => {
-//     try {
-//         const employeeId = req.params.id;
-
-//         let employee = await Employee.findById(employeeId);
-//         if (!employee) {
-//             return next(new ErrorHandler(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
-//         }
-
-//         const monthlyAttendanceDetails = [];
-//         employee.attendances.forEach(attendanceRecord => {
-//             const date = attendanceRecord.date.toISOString().split('T')[0];
-//             const punches = attendanceRecord.punches;
-
-//             const attendanceDetail = {
-//                 date,
-//                 checkInTime: '00:00',
-//                 checkOutTime: '00:00',
-//                 totalWorkingHours: '00:00',
-//                 present: false,
-//                 overtime: '00:00'
-//             };
-
-//             if (punches.length > 0) {
-//                 const firstPunch = new Date(punches[0]?.punch_time);
-//                 const punchOuts = punches.filter(punch => punch?.type === 'punchOut');
-//                 const lastPunchOut = punchOuts?.length > 0 ? punchOuts[punchOuts?.length - 1]?.punch_time : "00:00";
-//                 const lastPunchTime = lastPunchOut !== "00:00" ? new Date(lastPunchOut) : "00:00";
-//                 const lastPunchType = punches[punches.length - 1].type;
-//                 const excludeLastPunchInTime = lastPunchType === 'punchIn';
-
-//                 attendanceDetail.checkOutTime = lastPunchTime && !excludeLastPunchInTime
-//                     ? lastPunchTime !== "00:00" ? lastPunchTime.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }) : "00:00"
-//                     : '00:00';
-//                 attendanceDetail.checkInTime = firstPunch ? firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' }) : "00:00"
-
-//                 if (!excludeLastPunchInTime) {
-//                     if (lastPunchTime !== "00:00") {
-//                         const totalHours = (lastPunchTime - firstPunch) / (1000 * 60 * 60);
-//                         attendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHours);
-//                     }
-
-//                     const overtimeStartTime = new Date(attendanceRecord.date).setHours(18, 30, 0, 0); // 6:30 PM
-//                     const lastPunchOut = lastPunchTime !== "00:00" ? lastPunchTime.getTime() : "00:00"
-
-//                     if (lastPunchOut !== "00:00") {
-//                         if (lastPunchOut > overtimeStartTime) {
-//                             const overtimeMinutes = (lastPunchOut - overtimeStartTime) / (1000 * 60);
-//                             attendanceDetail.overtime = formatTotalWorkingHours(overtimeMinutes / 60); // Convert minutes to hours
-//                         }
-//                     }
-//                 }
-
-//                 // if (punches.length > 0) {
-//                 //     const breakStartTime = new Date(attendanceRecord.date).setHours(12, 45, 0, 0); // 12:45 PM
-//                 //     const breakEndTime = new Date(attendanceRecord.date).setHours(13, 50, 0, 0); // 1:45 PM
-//                 //     const breakPunchOuts = punches.filter(
-//                 //         punch => punch.type === 'punchOut' && punch.punch_time >= breakStartTime && punch.punch_time <= breakEndTime
-//                 //     );
-//                 //     if (breakPunchOuts.length > 0) {
-//                 //         const breakPunchIn = punches.find(
-//                 //             punch => punch.type === 'punchIn' && punch.punch_time >= breakStartTime && punch.punch_time <= breakEndTime
-//                 //         );
-
-//                 //         if (breakPunchIn) {
-//                 //             attendanceDetail.breakTime = (breakPunchOuts[0].punch_time - breakPunchIn.punch_time) / (1000 * 60 * 60);
-//                 //         }
-//                 //     }
-//                 // }
-
-//                 attendanceDetail.present = punches.some(punch => punch.type === 'punchIn' ? true : false);
-//             }
-//             monthlyAttendanceDetails.push(attendanceDetail);
-//         });
-
-//         const totalWorkingHours = monthlyAttendanceDetails.reduce((sum, attendance) => sum + parseFloat(attendance.totalWorkingHours), 0);
-//         const totalCheckInTime = monthlyAttendanceDetails.reduce((sum, attendance) => sum + (attendance.checkInTime ? new Date(`2000-01-01 ${attendance.checkInTime}`).getTime() : 0), 0);
-//         const totalCheckOutTime = monthlyAttendanceDetails.reduce((sum, attendance) => sum + (attendance.checkOutTime ? new Date(`2000-01-01 ${attendance.checkOutTime}`).getTime() : 0), 0);
-
-//         const averageWorkingHours = (totalWorkingHours / monthlyAttendanceDetails.length).toFixed(2);
-//         const averageInTime = new Date(totalCheckInTime / monthlyAttendanceDetails.length).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
-//         const averageOutTime = totalCheckOutTime ? new Date(totalCheckOutTime / monthlyAttendanceDetails.length).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' }) : "00:00"
-
-//         return res.status(StatusCodes.OK).json({
-//             status: StatusCodes.OK,
-//             success: true,
-//             message: `Attendance details retrieved successfully`,
-//             data: {
-//                 employee: {
-//                     _id: employee._id,
-//                     firstName: employee.first_name,
-//                     lastName: employee.last_name,
-//                     userId: employee.user_id,
-//                     avatar: employee.avatar,
-//                     designation: employee.designation,
-//                     joiningDate: employee.join_date,
-//                 },
-//                 averageWorkingHours,
-//                 averageInTime,
-//                 averageOutTime,
-//                 attendessdetail: monthlyAttendanceDetails,
-//             },
-//         });
-//     } catch (error) {
-//         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
-//     }
-// };
-
-
-// Add this function at the beginning of your code
-
 const getAttendanceDetails = async (req, res, next) => {
     try {
         const employeeId = req.params.id;
@@ -164,7 +53,6 @@ const getAttendanceDetails = async (req, res, next) => {
                     } else {
                         attendanceDetail.checkOutTime = '00:00';
                     }
-
                     attendanceDetail.checkInTime = firstPunch ? firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' }) : new Date("00:00");
                     if (!excludeLastPunchInTime) {
                         const totalHours = (lastPunchOut - firstPunch) / (1000 * 60 * 60);
@@ -174,22 +62,12 @@ const getAttendanceDetails = async (req, res, next) => {
                             attendanceDetail.totalWorkingHours = new Date("00:00");
                         }
                     }
-
                     const overtimeStartTime = new Date(attendanceRecord.date).setHours(18, 30, 0, 0); // 6:30 PM
                     const lastPunchOutTime = lastPunchOut.getTime();
                     if (lastPunchOutTime > overtimeStartTime) {
                         const overtimeMinutes = (lastPunchOutTime - overtimeStartTime) / (1000 * 60);
                         attendanceDetail.overtime = formatTotalWorkingHours(overtimeMinutes / 60); // Convert minutes to hours
                     }
-
-                    // if (attendanceRecord.type_attendance === 'holiday') {
-                    //     attendanceDetail.present = false;
-                    //     attendanceDetail.type = "holiday"
-                    //     totalHolidayDays++;
-                    // } else if (attendanceRecord.type_attendance === 'leave') {
-                    //     attendanceDetail.present = false;
-                    //     attendanceDetail.type = "leave"
-                    // } else 
                     if (attendanceRecord.type_attendance === 'present') {
                         attendanceDetail.present = true;
                         attendanceDetail.type = "present"
@@ -447,9 +325,14 @@ const getTodayAttendance = async (req, res, next) => {
                     const lastPunchType = employeeDetails.punches[employeeDetails.punches.length - 1].type;
                     const excludeLastPunchInTime = lastPunchType === 'punchIn';
 
-                    employeeAttendance.checkOutTime = lastPunchTime && !excludeLastPunchInTime
-                        ? lastPunchTime.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' })
-                        : '00:00';
+                    // employeeAttendance.checkOutTime = lastPunchTime && !excludeLastPunchInTime
+                    //     ? lastPunchTime.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' })
+                    //     : '00:00';
+                    if (lastPunchOut instanceof Date && !isNaN(lastPunchOut?.getTime())) {
+                        employeeAttendance.checkOutTime = lastPunchOut.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
+                    } else {
+                        employeeAttendance.checkOutTime = '00:00';
+                    }
                     employeeAttendance.checkInTime = firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
 
                     if (!excludeLastPunchInTime) {
@@ -457,23 +340,6 @@ const getTodayAttendance = async (req, res, next) => {
                         employeeAttendance.totalWorkingHours = formatTotalWorkingHours(totalHours);
                     }
 
-                    // // Calculate break time
-                    // if (employeeDetails.punches.length > 0) {
-                    //     const breakStartTime = new Date(currentDate).setHours(12, 45, 0, 0); // 12:45 PM
-                    //     const breakEndTime = new Date(currentDate).setHours(13, 50, 0, 0); // 1:45 PM
-                    //     const breakPunchOuts = employeeDetails.punches.filter(
-                    //         punch => punch.type === 'punchOut' && punch.punch_time >= breakStartTime && punch.punch_time <= breakEndTime
-                    //     );
-                    //     if (breakPunchOuts.length > 0) {
-                    //         const breakPunchIn = employeeDetails.punches.find(
-                    //             punch => punch.type === 'punchIn' && punch.punch_time >= breakStartTime && punch.punch_time <= breakEndTime
-                    //         );
-
-                    //         if (breakPunchIn) {
-                    //             employeeAttendance.breakTime = (breakPunchOuts[0].punch_time - breakPunchIn.punch_time) / (1000 * 60 * 60);
-                    //         }
-                    //     }
-                    // }
                     employeeAttendance.present = true;
                 }
             }
@@ -597,18 +463,14 @@ const getEmployeeAttendanceDetails = async (req, res, next) => {
                 message: "Date is required",
             });
         }
-
         const currentDateIST = new Date(requestedDate).toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
         const currentDate = new Date(currentDateIST).setHours(0, 0, 0, 0);
         let employee = await Employee.findById(employeeId);
         if (!employee) {
             return next(new ErrorHandler(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
         }
-        const employeeAttendanceRecord = await Attendance.findOne({
-            date: currentDate,
-            "attendanceDetails.employeeId": employee._id,
-        });
-        if (!employeeAttendanceRecord) {
+        const attendanceRecord = employee?.attendances.find((item, index) => new Date(item.date).setHours(0, 0, 0, 0) === currentDate)
+        if (!attendanceRecord) {
             return res.status(StatusCodes.OK).json({
                 status: StatusCodes.OK,
                 success: true,
@@ -622,36 +484,57 @@ const getEmployeeAttendanceDetails = async (req, res, next) => {
                 },
             });
         }
-        const punches = employeeAttendanceRecord.attendanceDetails.find(detail =>
-            detail.employeeId.equals(employee._id)
-        )?.punches || [];
-        const present = punches.some(punch => punch.type === 'punchIn' ? true : false);
-        const status = punches[0]?.type
 
-        let checkInTime = '00:00';
-        let checkOutTime = '00:00';
-        let totalWorkingHours = "00:00";
-        if (punches.length > 0) {
-            const firstPunch = new Date(punches[0]?.punch_time);
-            const punchOuts = punches.filter(punch => punch.type === 'punchOut');
-            const lastPunchOut = punchOuts.length > 0 ? new Date(punchOuts[punchOuts.length - 1].punch_time) : "00:00";
-            const lastPunchType = punches[punches.length - 1].type;
-            const excludeLastPunchInTime = lastPunchType === 'punchIn';
-            checkOutTime = !excludeLastPunchInTime
-                ? (lastPunchOut instanceof Date && !isNaN(lastPunchOut.getTime())
-                    ? lastPunchOut.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' })
-                    : '00:00'
-                )
-                : '00:00';
-            checkInTime = firstPunch ? firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' }) : '00:00';
+        const AttendanceDetail = {
+            date: currentDateIST,
+            checkInTime: '00:00',
+            checkOutTime: '00:00',
+            totalWorkingHours: '00:00',
+            overtime: '00:00',
+            type: '',
+            present: false,
+            punches: [],
+        };
 
-            if (!excludeLastPunchInTime) {
-                const totalHours = (lastPunchOut - firstPunch) / (1000 * 60 * 60);
+        if (attendanceRecord.type_attendance === 'holiday' || attendanceRecord.type_attendance === 'leave') {
+            AttendanceDetail.type = attendanceRecord.type_attendance;
+            AttendanceDetail.present = false;
+        } else {
+            if (attendanceRecord.punches.length > 0) {
+                AttendanceDetail.punches = attendanceRecord.punches
 
-                if (!isNaN(totalHours) && isFinite(totalHours)) {
-                    totalWorkingHours = formatTotalWorkingHours(totalHours);
+                const firstPunch = new Date(attendanceRecord.punches[0]?.punch_time);
+                const punchOuts = attendanceRecord.punches.filter(punch => punch?.type === 'punchOut');
+                const lastPunchOut = punchOuts.length > 0 ? new Date(punchOuts[punchOuts.length - 1].punch_time) : new Date("00:00");
+                const lastPunchType = attendanceRecord.punches[attendanceRecord.punches.length - 1].type;
+                const excludeLastPunchInTime = lastPunchType === 'punchIn';
+
+                if (lastPunchOut instanceof Date && !isNaN(lastPunchOut?.getTime())) {
+                    AttendanceDetail.checkOutTime = lastPunchOut.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
                 } else {
-                    totalWorkingHours = '00:00';
+                    AttendanceDetail.checkOutTime = '00:00';
+                }
+                AttendanceDetail.checkInTime = firstPunch ? firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' }) : new Date("00:00");
+                if (!excludeLastPunchInTime) {
+                    const totalHours = (lastPunchOut - firstPunch) / (1000 * 60 * 60);
+                    if (!isNaN(totalHours) && isFinite(totalHours)) {
+                        AttendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHours);
+                    } else {
+                        AttendanceDetail.totalWorkingHours = new Date("00:00");
+                    }
+                }
+                const overtimeStartTime = new Date(attendanceRecord.date).setHours(18, 30, 0, 0); // 6:30 PM
+                const lastPunchOutTime = lastPunchOut.getTime();
+                if (lastPunchOutTime > overtimeStartTime) {
+                    const overtimeMinutes = (lastPunchOutTime - overtimeStartTime) / (1000 * 60);
+                    AttendanceDetail.overtime = formatTotalWorkingHours(overtimeMinutes / 60); // Convert minutes to hours
+                }
+                if (attendanceRecord.type_attendance === 'present') {
+                    AttendanceDetail.present = true;
+                    AttendanceDetail.type = "present"
+                } else {
+                    AttendanceDetail.present = false;
+                    AttendanceDetail.type = "absent"
                 }
             }
         }
@@ -662,16 +545,7 @@ const getEmployeeAttendanceDetails = async (req, res, next) => {
             message: `Attendance details for the employee on the specified date retrieved successfully`,
             data: {
                 employeeId,
-                checkInTime,
-                checkOutTime,
-                totalWorkingHours,
-                today_activity: {
-                    date: employeeAttendanceRecord.date,
-                    present,
-                    status,
-                    punches,
-                    _id: employeeAttendanceRecord._id,
-                },
+                AttendanceDetail
             },
         });
     } catch (error) {
