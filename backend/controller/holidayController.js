@@ -9,36 +9,32 @@ const Employee = require("../models/employeeModel");
 const addHoliday = async (req, res, next) => {
     try {
         const { holiday_no, holiday_name, holiday_date, detail, status } = req.body;
-
         if (!holiday_no || !holiday_name || !holiday_date) {
             return next(new ErrorHander("Holiday number, name, and date are required", StatusCodes.BAD_REQUEST));
         }
-
         const today = new Date();
         const selectedDate = new Date(holiday_date);
-
         if (selectedDate <= today) {
             return next(new ErrorHander("Invalid date. Holidays must be set for future dates only.", StatusCodes.BAD_REQUEST));
         }
-
         const isSunday = selectedDate.getDay() === 0;
         if (isSunday) {
             return next(new ErrorHander("Holidays cannot be added on Sundays", StatusCodes.BAD_REQUEST));
         }
-
-        // Convert the holiday_date to the desired format
         const formattedHolidayDate = selectedDate.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
-
+        const existingHoliday = await Holiday.findOne({ holiday_date: formattedHolidayDate });
+        if (existingHoliday) {
+            return next(new ErrorHander("A holiday already exists for the specified date", StatusCodes.BAD_REQUEST));
+        }
         const holiday = new Holiday({
             holiday_no,
             holiday_name,
-            holiday_date: formattedHolidayDate, // Use the formatted date
+            holiday_date: formattedHolidayDate,
             detail,
             status
         });
-
         const savedHoliday = await holiday.save();
-        addPunchForHoliday(formattedHolidayDate)
+        addPunchForHoliday(formattedHolidayDate);
         return res.status(StatusCodes.CREATED).json({
             status: StatusCodes.CREATED,
             success: true,
@@ -49,7 +45,6 @@ const addHoliday = async (req, res, next) => {
         return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
-
 
 const getAllHolidays = async (req, res, next) => {
     try {

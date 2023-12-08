@@ -205,16 +205,11 @@ const addPunchForHoliday = async (date) => {
                 const employeeAttendanceDetailsIndex = todayAttendance.attendanceDetails.findIndex(
                     (detail) => detail.employeeId.equals(employee._id)
                 );
-                console.log("🚀 ~ file: punchController.js:215 ~ addPunchForHoliday ~ employeeAttendanceDetailsIndex:", employeeAttendanceDetailsIndex)
-
-                // if (employeeAttendanceDetailsIndex !== -1) {
-                //     todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches.push({
-                //         type: "holiday",
-                //         punch_time: date,
-                //         note: "",
-                //     });
-                //     todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].present = 0;
-                // }
+                if (employeeAttendanceDetailsIndex !== -1) {
+                    todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].present = 0;
+                    todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].type_attendance = "holiday";
+                    todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].date = date;
+                }
 
                 await todayAttendance.save();
 
