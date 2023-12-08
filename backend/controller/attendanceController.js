@@ -151,13 +151,14 @@ const getAttendanceDetails = async (req, res, next) => {
                 const lastPunchOut = punchOuts.length > 0 ? new Date(punchOuts[punchOuts.length - 1].punch_time) : "00:00";
                 const lastPunchType = punches[punches.length - 1].type;
                 const excludeLastPunchInTime = lastPunchType === 'punchIn';
-            
+
                 attendanceDetail.checkOutTime = !excludeLastPunchInTime
                     ? (lastPunchOut instanceof Date && !isNaN(lastPunchOut.getTime())
                         ? lastPunchOut.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' })
                         : '00:00'
                     )
                     : '00:00';
+
                 attendanceDetail.checkInTime = firstPunch ? firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' }) : '00:00';
                 if (!excludeLastPunchInTime) {
                     const totalHours = (lastPunchOut - firstPunch) / (1000 * 60 * 60);
@@ -173,13 +174,20 @@ const getAttendanceDetails = async (req, res, next) => {
                     const overtimeMinutes = (lastPunchOutTime - overtimeStartTime) / (1000 * 60);
                     attendanceDetail.overtime = formatTotalWorkingHours(overtimeMinutes / 60); // Convert minutes to hours
                 }
-                if (punches.some(punch => punch.type === 'holiday')) {
+
+                if (attendanceRecord.type_attendance === 'holiday') {
                     attendanceDetail.present = false;
                     attendanceDetail.type = "holiday"
                     totalHolidayDays++;
-                } else {
+                } else if (attendanceRecord.type_attendance === 'leave') {
+                    attendanceDetail.present = false;
+                    attendanceDetail.type = "leave"
+                } else if (attendanceRecord.type_attendance === 'present') {
                     attendanceDetail.present = true;
                     attendanceDetail.type = "present"
+                } else {
+                    attendanceDetail.present = false;
+                    attendanceDetail.type = "absent"
                 }
             }
             if (!attendanceDetail.present) {
@@ -538,24 +546,6 @@ const getEmployeePunchesToday = async (req, res, next) => {
                         overtime = formatTotalWorkingHours(overtimeMinutes / 60); // Convert minutes to hours
                     }
                 }
-
-                // // Calculate break time
-                // if (FindAttendes.punches.length > 0) {
-                //     const breakStartTime = new Date(currentDate).setHours(12, 45, 0, 0); // 12:45 PM
-                //     const breakEndTime = new Date(currentDate).setHours(13, 50, 0, 0); // 1:45 PM
-                //     const breakPunchOuts = FindAttendes.punches.filter(
-                //         punch => punch.type === 'punchOut' && punch.punch_time >= breakStartTime && punch.punch_time <= breakEndTime
-                //     );
-                //     if (breakPunchOuts.length > 0) {
-                //         const breakPunchIn = FindAttendes.punches.find(
-                //             punch => punch.type === 'punchIn' && punch.punch_time >= breakStartTime && punch.punch_time <= breakEndTime
-                //         );
-
-                //         if (breakPunchIn) {
-                //             breakTime = (breakPunchOuts[0].punch_time - breakPunchIn.punch_time) / (1000 * 60 * 60);
-                //         }
-                //     }
-                // }
             }
 
             return res.status(StatusCodes.OK).json({
