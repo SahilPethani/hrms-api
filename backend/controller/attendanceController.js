@@ -145,49 +145,58 @@ const getAttendanceDetails = async (req, res, next) => {
                 overtime: '00:00'
             };
 
-            if (punches.length > 0) {
-                const firstPunch = new Date(punches[0]?.punch_time);
-                const punchOuts = punches.filter(punch => punch.type === 'punchOut');
-                const lastPunchOut = punchOuts.length > 0 ? new Date(punchOuts[punchOuts.length - 1].punch_time) : "00:00";
-                const lastPunchType = punches[punches.length - 1].type;
-                const excludeLastPunchInTime = lastPunchType === 'punchIn';
+            if (attendanceRecord.type_attendance === 'holiday' || attendanceRecord.type_attendance === 'leave') {
+                attendanceDetail.checkInTime = '00:00';
+                attendanceDetail.checkOutTime = '00:00';
+                attendanceDetail.totalWorkingHours = '00:00';
+                attendanceDetail.type = attendanceRecord.type_attendance;
+                attendanceDetail.present = false;
+            } else {
+                if (punches.length > 0) {
+                    const firstPunch = new Date(punches[0]?.punch_time);
+                    const punchOuts = punches.filter(punch => punch?.type === 'punchOut');
+                    const lastPunchOut = punchOuts.length > 0 ? new Date(punchOuts[punchOuts.length - 1].punch_time) : new Date("00:00");
+                    const lastPunchType = punches[punches.length - 1].type;
+                    const excludeLastPunchInTime = lastPunchType === 'punchIn';
 
-                attendanceDetail.checkOutTime = !excludeLastPunchInTime
-                    ? (lastPunchOut instanceof Date && !isNaN(lastPunchOut.getTime())
-                        ? lastPunchOut.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' })
-                        : '00:00'
-                    )
-                    : '00:00';
-
-                attendanceDetail.checkInTime = firstPunch ? firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' }) : '00:00';
-                if (!excludeLastPunchInTime) {
-                    const totalHours = (lastPunchOut - firstPunch) / (1000 * 60 * 60);
-                    if (!isNaN(totalHours) && isFinite(totalHours)) {
-                        attendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHours);
+                    if (lastPunchOut instanceof Date && !isNaN(lastPunchOut?.getTime())) {
+                        attendanceDetail.checkOutTime = lastPunchOut.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
                     } else {
-                        attendanceDetail.totalWorkingHours = '00:00';
+                        attendanceDetail.checkOutTime = '00:00';
                     }
-                }
-                const overtimeStartTime = new Date(attendanceRecord.date).setHours(18, 30, 0, 0); // 6:30 PM
-                const lastPunchOutTime = lastPunchOut.getTime();
-                if (lastPunchOutTime > overtimeStartTime) {
-                    const overtimeMinutes = (lastPunchOutTime - overtimeStartTime) / (1000 * 60);
-                    attendanceDetail.overtime = formatTotalWorkingHours(overtimeMinutes / 60); // Convert minutes to hours
-                }
 
-                if (attendanceRecord.type_attendance === 'holiday') {
-                    attendanceDetail.present = false;
-                    attendanceDetail.type = "holiday"
-                    totalHolidayDays++;
-                } else if (attendanceRecord.type_attendance === 'leave') {
-                    attendanceDetail.present = false;
-                    attendanceDetail.type = "leave"
-                } else if (attendanceRecord.type_attendance === 'present') {
-                    attendanceDetail.present = true;
-                    attendanceDetail.type = "present"
-                } else {
-                    attendanceDetail.present = false;
-                    attendanceDetail.type = "absent"
+                    attendanceDetail.checkInTime = firstPunch ? firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' }) : new Date("00:00");
+                    if (!excludeLastPunchInTime) {
+                        const totalHours = (lastPunchOut - firstPunch) / (1000 * 60 * 60);
+                        if (!isNaN(totalHours) && isFinite(totalHours)) {
+                            attendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHours);
+                        } else {
+                            attendanceDetail.totalWorkingHours = new Date("00:00");
+                        }
+                    }
+
+                    const overtimeStartTime = new Date(attendanceRecord.date).setHours(18, 30, 0, 0); // 6:30 PM
+                    const lastPunchOutTime = lastPunchOut.getTime();
+                    if (lastPunchOutTime > overtimeStartTime) {
+                        const overtimeMinutes = (lastPunchOutTime - overtimeStartTime) / (1000 * 60);
+                        attendanceDetail.overtime = formatTotalWorkingHours(overtimeMinutes / 60); // Convert minutes to hours
+                    }
+
+                    // if (attendanceRecord.type_attendance === 'holiday') {
+                    //     attendanceDetail.present = false;
+                    //     attendanceDetail.type = "holiday"
+                    //     totalHolidayDays++;
+                    // } else if (attendanceRecord.type_attendance === 'leave') {
+                    //     attendanceDetail.present = false;
+                    //     attendanceDetail.type = "leave"
+                    // } else 
+                    if (attendanceRecord.type_attendance === 'present') {
+                        attendanceDetail.present = true;
+                        attendanceDetail.type = "present"
+                    } else {
+                        attendanceDetail.present = false;
+                        attendanceDetail.type = "absent"
+                    }
                 }
             }
             if (!attendanceDetail.present) {
