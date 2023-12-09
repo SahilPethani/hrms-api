@@ -314,7 +314,6 @@ const addLeaveAttendance = async (employeeId, fromDate, toDate) => {
     }
 };
 
-
 const addPunchWeekend = async (date) => {
     const currentDateIST = new Date(date).toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
 
