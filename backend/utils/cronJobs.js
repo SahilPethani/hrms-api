@@ -32,17 +32,25 @@ const jobDaily = cron.schedule('0 0 * * *', async () => {
 
 
 // Schedule run every Sunday
-const jobSunday = cron.schedule('0 0 * * 0', async () => {
+// const jobSunday = cron.schedule('0 0 * * 0', async () => {
+//     const currentDate = new Date().setHours(0, 0, 0, 0);
+//     await addPunchWeekend(currentDate);
+//     console.log('Weekend punches added successfully.');
+// }, {
+//     scheduled: true,
+//     timezone: 'Asia/Kolkata', 
+// });
+
+
+
+const jobSunday = cron.schedule('* * * * * *', async () => {
     const currentDate = new Date().setHours(0, 0, 0, 0);
     await addPunchWeekend(currentDate);
     console.log('Weekend punches added successfully.');
 }, {
+    scheduled: true,
     timezone: 'Asia/Kolkata', 
 });
-
-
-
-
 
 // Start both cron jobs
 jobDaily.start();

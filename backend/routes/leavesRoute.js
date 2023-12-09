@@ -3,7 +3,7 @@ const {
     authenticateUser,
     authorizePermission
 } = require('../middleware/auth');
-const { applyLeave, updateLeaveStatus, getAllLeaves, getLeaveById, deleteLeave } = require("../controller/leavesController");
+const { applyLeave, updateLeaveStatus, getAllLeaves, getLeaveById, deleteLeave, getLeavesByEmployeeId } = require("../controller/leavesController");
 
 const router = express.Router();
 
@@ -26,6 +26,11 @@ router
 
 router
     .route("/leave/one/:id")
-    .get(authenticateUser, authorizePermission("admin"), getLeaveById);
+    .get(authenticateUser, getLeaveById);
+
+router
+    .route("/leave/employee/:employeeId")
+    .get(authenticateUser, authorizePermission("employee"), getLeavesByEmployeeId);
+
 
 module.exports = router;

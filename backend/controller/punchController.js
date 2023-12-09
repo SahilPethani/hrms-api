@@ -228,74 +228,6 @@ const addPunchForHoliday = async (date) => {
     }
 };
 
-// const addLeaveAttendance = async (employeeId, fromDate, toDate) => {
-//     try {
-//         const employee = await Employee.findById(employeeId);
-
-//         if (!employee) {
-//             throw new Error('Employee not found');
-//         }
-
-//         // Add logic to add attendance for each day within the leave period
-//         for (let currentDate = new Date(fromDate); currentDate <= new Date(toDate); currentDate.setDate(currentDate.getDate() + 1)) {
-//             console.log("🚀 ~ file: punchController.js:246 ~ addLeaveAttendance ~ currentDate:", currentDate)
-//             const todayAttendance = await Attendance.findOne({
-//                 date: currentDate,
-//                 "attendanceDetails.employeeId": employee._id,
-//             });
-
-//             if (!todayAttendance) {
-//                 console.log("Find")
-//                 await Attendance.findOneAndUpdate(
-//                     { date: currentDate },
-//                     {
-//                         $addToSet: {
-//                             attendanceDetails: {
-//                                 employeeId: employee._id,
-//                                 present: 0,
-//                                 type_attendance: "leave",
-//                             },
-//                         },
-//                     },
-//                     { upsert: true, new: true }
-//                 );
-
-//                 const existingAttendance = employee.attendances.find(attendance =>
-//                     new Date(attendance.date).toDateString() === currentDate.toDateString()
-//                 );
-
-//                 if (!existingAttendance) {
-//                     const newAttendance = {
-//                         date: currentDate,
-//                         present: 0,
-//                         type_attendance: "leave",
-//                     };
-//                     employee.attendances.push(newAttendance);
-//                 }
-//             } else {
-//                 console.log("Not Find")
-
-//                 await todayAttendance.save();
-
-//                 // Update Employee model
-//                 const attendanceData = {
-//                     date: currentDate,
-//                     type_attendance: "leave",
-//                     present: 0,
-//                 };
-//                 employee.attendances.push(attendanceData);
-//                 await employee.save();
-//             }
-
-//         }
-
-//         // Save the updated employee document
-//         await employee.save();
-//     } catch (error) {
-//         throw new Error(`Error adding leave attendance: ${error.message}`);
-//     }
-// };
-
 const addLeaveAttendance = async (employeeId, fromDate, toDate) => {
     try {
         const employee = await Employee.findById(employeeId);
@@ -315,8 +247,14 @@ const addLeaveAttendance = async (employeeId, fromDate, toDate) => {
                 "attendanceDetails.employeeId": employee._id,
             });
 
+            const newAttendance = {
+                date:  new Date(currentDate),
+                present: 0,
+                type_attendance: "leave",
+            };
+            employee.attendances.push(newAttendance);
+
             if (!todayAttendance) {
-                console.log("Find");
 
                 await Attendance.findOneAndUpdate(
                     { date: currentDate },
@@ -332,22 +270,16 @@ const addLeaveAttendance = async (employeeId, fromDate, toDate) => {
                     { upsert: true, new: true }
                 );
 
-                const existingAttendanceIndex = employee.attendances.findIndex(attendance =>
-                    new Date(attendance.date).toDateString() === currentDate.toDateString()
-                );
+                // const existingAttendanceIndex = employee.attendances.findIndex(attendance =>
+                //     new Date(attendance.date).toDateString() === currentDate.toDateString()
+                // );
 
-                if (existingAttendanceIndex !== -1) {
-                    employee.attendances[existingAttendanceIndex].present = 0;
-                } else {
-                    const newAttendance = {
-                        date: currentDate,
-                        present: 0,
-                        type_attendance: "leave",
-                    };
-                    employee.attendances.push(newAttendance);
-                }
+                // if (existingAttendanceIndex !== -1) {
+                //     employee.attendances[existingAttendanceIndex].present = 0;
+                // } else {
+                    
+                // }
             } else {
-                console.log("Not Find");
                 todayAttendance.attendanceDetails.forEach(detail => {
                     if (detail.employeeId.equals(employee._id) && detail.type_attendance === "leave") {
                         detail.present = 0;
@@ -356,20 +288,20 @@ const addLeaveAttendance = async (employeeId, fromDate, toDate) => {
                 await todayAttendance.save();
 
                 // Update Employee model
-                const existingAttendanceIndex = employee.attendances.findIndex(attendance =>
-                    new Date(attendance.date).toDateString() === currentDate.toDateString()
-                );
+                // const existingAttendanceIndex = employee.attendances.findIndex(attendance =>
+                //     new Date(attendance.date).toDateString() === currentDate.toDateString()
+                // );
 
-                if (existingAttendanceIndex !== -1) {
-                    employee.attendances[existingAttendanceIndex].present = 0;
-                } else {
-                    const newAttendance = {
-                        date: currentDate,
-                        present: 0,
-                        type_attendance: "leave",
-                    };
-                    employee.attendances.push(newAttendance);
-                }
+                // if (existingAttendanceIndex !== -1) {
+                //     employee.attendances[existingAttendanceIndex].present = 0;
+                // } else {
+                //     const newAttendance = {
+                //         date: currentDate,
+                //         present: 0,
+                //         type_attendance: "leave",
+                //     };
+                //     employee.attendances.push(newAttendance);
+                // }
             }
 
             currentDate.setDate(currentDate.getDate() + 1);
@@ -384,9 +316,10 @@ const addLeaveAttendance = async (employeeId, fromDate, toDate) => {
 
 
 const addPunchWeekend = async (date) => {
-    console.error("Error adding weekend punch:", date);
-};
+    const currentDateIST = new Date(date).toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
 
+    console.error("Error adding weekend punch:", currentDateIST);
+};
 
 module.exports = {
     punchIn,

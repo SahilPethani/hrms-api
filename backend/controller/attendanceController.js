@@ -48,10 +48,12 @@ const getAttendanceDetails = async (req, res, next) => {
                     const lastPunchType = punches[punches.length - 1].type;
                     const excludeLastPunchInTime = lastPunchType === 'punchIn';
 
-                    if (lastPunchOut instanceof Date && !isNaN(lastPunchOut?.getTime())) {
-                        attendanceDetail.checkOutTime = lastPunchOut.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
-                    } else {
-                        attendanceDetail.checkOutTime = '00:00';
+                    if (!excludeLastPunchInTime) {
+                        if (lastPunchOut instanceof Date && !isNaN(lastPunchOut?.getTime())) {
+                            attendanceDetail.checkOutTime = lastPunchOut.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
+                        } else {
+                            attendanceDetail.checkOutTime = '00:00';
+                        }
                     }
                     attendanceDetail.checkInTime = firstPunch ? firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' }) : new Date("00:00");
                     if (!excludeLastPunchInTime) {
@@ -59,9 +61,10 @@ const getAttendanceDetails = async (req, res, next) => {
                         if (!isNaN(totalHours) && isFinite(totalHours)) {
                             attendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHours);
                         } else {
-                            attendanceDetail.totalWorkingHours = new Date("00:00");
+                            attendanceDetail.totalWorkingHours = '00:00'; // Set it to a string, not a Date object
                         }
                     }
+
                     const overtimeStartTime = new Date(attendanceRecord.date).setHours(18, 30, 0, 0); // 6:30 PM
                     const lastPunchOutTime = lastPunchOut.getTime();
                     if (lastPunchOutTime > overtimeStartTime) {

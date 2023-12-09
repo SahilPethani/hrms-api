@@ -5,54 +5,6 @@ const ErrorHandler = require("../middleware/errorhander");
 const { addLeaveAttendance } = require("./punchController");
 const Attendance = require("../models/attendanceModel");
 
-// const applyLeave = async (req, res, next) => {
-//     try {
-//         const { employeeId, fromDate, toDate, type, halfDay, comments } = req.body;
-
-//         const today = new Date().setHours(0, 0, 0, 0);
-//         const selectedFromDate = new Date(fromDate).setHours(0, 0, 0, 0);
-
-//         if (selectedFromDate < today) {
-//             return next(new ErrorHandler('From date must be in the future', StatusCodes.BAD_REQUEST));
-//         }
-
-//         const selectedToDate = new Date(toDate).setHours(0, 0, 0, 0);
-
-//         if (selectedToDate < today || selectedToDate < selectedFromDate) {
-//             return next(new ErrorHandler('To date must be in the future and not before the from date', StatusCodes.BAD_REQUEST));
-//         }
-
-//         const leaveApplication = new Leaves({
-//             employeeId,
-//             fromDate,
-//             toDate,
-//             type,
-//             halfDay,
-//             status: 'Pending',
-//             comments,
-//         });
-
-//         const savedLeaveApplication = await leaveApplication.save();
-//         const employee = await Employee.findOne({ _id: employeeId });
-
-//         if (!employee) {
-//             return next(new ErrorHandler('Employee not found', StatusCodes.NOT_FOUND));
-//         }
-
-//         employee.leaves.push(savedLeaveApplication._id);
-//         await employee.save();
-
-//         res.status(StatusCodes.CREATED).json({
-//             status: StatusCodes.CREATED,
-//             success: true,
-//             message: 'Leave application submitted successfully',
-//             data: savedLeaveApplication,
-//         });
-//     } catch (error) {
-//         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
-//     }
-// };
-
 const applyLeave = async (req, res, next) => {
     try {
         const { employeeId, fromDate, toDate, type, duration, comments } = req.body;
@@ -70,15 +22,31 @@ const applyLeave = async (req, res, next) => {
             selectedToDate = selectedFromDate;
         } else if (duration === 'First Half' || duration === 'Second Half') {
             selectedToDate = selectedFromDate;
-            
-            // // Add attendance for the current date when applying for First Half or Second Half
-            // await addLeaveAttendance(employeeId, selectedFromDate, duration);
         } else {
             selectedToDate = new Date(toDate).setHours(0, 0, 0, 0);
 
             if (selectedToDate < today || selectedToDate < selectedFromDate) {
                 return next(new ErrorHandler('To date must be in the future and not before the from date', StatusCodes.BAD_REQUEST));
             }
+        }
+
+        // Check for overlapping leave
+        const overlappingLeave = await Leaves.findOne({
+            employeeId,
+            $or: [
+                {
+                    fromDate: { $lte: selectedToDate },
+                    toDate: { $gte: selectedFromDate }
+                },
+                {
+                    fromDate: { $gte: selectedFromDate, $lte: selectedToDate },
+                    toDate: { $gte: selectedToDate }
+                }
+            ]
+        });
+
+        if (overlappingLeave) {
+            return next(new ErrorHandler('Leave already exists for the specified date range', StatusCodes.BAD_REQUEST));
         }
 
         const leaveApplication = new Leaves({
@@ -127,6 +95,13 @@ const updateLeaveStatus = async (req, res, next) => {
 
         if (newStatus === 'Approved' && leave.status !== 'Approved') {
             await addLeaveAttendance(leave.employeeId, leave.fromDate, leave.toDate);
+        } else if (newStatus === 'Approved' && leave.status === 'Approved') {
+            return res.status(StatusCodes.OK).json({
+                status: StatusCodes.OK,
+                success: true,
+                message: 'Leave status is already Approved',
+                data: leave,
+            });
         }
 
         leave.status = newStatus;
@@ -211,46 +186,15 @@ const getLeaveById = async (req, res, next) => {
     }
 };
 
-// const deleteLeave = async (req, res, next) => {
-//     try {
-//         const leaveId = req.params.id;
-//         const leave = await Leaves.findById(leaveId);
-//         if (!leave) {
-//             return next(new ErrorHandler('Leave not found', StatusCodes.NOT_FOUND));
-//         }
-//         const employee = await Employee.findOne({ _id: leave.employeeId });
-//         if (!employee) {
-//             return next(new ErrorHandler('Employee not found', StatusCodes.NOT_FOUND));
-//         }
-
-//         const leaveIndex = employee.leaves.indexOf(leaveId);
-//         if (leaveIndex !== -1) {
-//             employee.leaves.splice(leaveIndex, 1);
-//         }
-
-//         await employee.save();
-
-//         await leave.remove();
-
-//         res.status(StatusCodes.OK).json({
-//             status: StatusCodes.OK,
-//             success: true,
-//             message: 'Leave deleted successfully',
-//         });
-//     } catch (error) {
-//         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
-//     }
-// };
-
 const deleteLeave = async (req, res, next) => {
     try {
         const leaveId = req.params.id;
         const leave = await Leaves.findById(leaveId);
-        
+
         if (!leave) {
             return next(new ErrorHandler('Leave not found', StatusCodes.NOT_FOUND));
         }
-        
+
         const employee = await Employee.findOne({ _id: leave.employeeId });
 
         if (!employee) {
@@ -288,11 +232,20 @@ const deleteLeave = async (req, res, next) => {
             }
         );
 
+        // await Employee.updateMany(
+        //     { 'attendances.date': { $gte: fromDate, $lte: toDate } },
+        //     {
+        //         $pull: {
+        //             attendances: { date: { $gte: fromDate, $lte: toDate } }
+        //         }
+        //     }
+        // );
+
         await Employee.updateMany(
-            { 'attendances.date': { $gte: fromDate, $lte: toDate }},
+            { _id: employee._id, 'attendances.date': { $gte: fromDate, $lte: toDate } },
             {
                 $pull: {
-                    attendances: { date: { $gte: fromDate, $lte: toDate } }
+                    'attendances': { date: { $gte: fromDate, $lte: toDate } }
                 }
             }
         );
@@ -310,11 +263,58 @@ const deleteLeave = async (req, res, next) => {
     }
 };
 
+const getLeavesByEmployeeId = async (req, res, next) => {
+    try {
+        const employeeId = req.params.employeeId;
+        const page = parseInt(req.query.page_no) || 1;
+        const pageSize = parseInt(req.query.items_per_page) || 10;
+
+        const employee = await Employee.findOne({ _id: employeeId });
+
+        if (!employee) {
+            return next(new ErrorHandler('Employee not found', StatusCodes.NOT_FOUND));
+        }
+
+        const totalLeaves = await Leaves.countDocuments({ employeeId });
+        const totalPages = Math.ceil(totalLeaves / pageSize);
+
+        const leaves = await Leaves.find({ employeeId })
+            .skip((page - 1) * pageSize)
+            .limit(pageSize)
+            .populate({
+                path: 'employeeId',
+                model: 'Employee',
+                select: 'first_name last_name avatar userId designation',
+            });
+
+        const leavesWithDays = leaves.map(leave => {
+            const fromDate = new Date(leave.fromDate);
+            const toDate = new Date(leave.toDate);
+            const diffInMilliseconds = toDate - fromDate;
+            const days = diffInMilliseconds / (1000 * 60 * 60 * 24); // Convert milliseconds to days
+            return { ...leave.toObject(), numberOfDays: days };
+        });
+
+        res.status(StatusCodes.OK).json({
+            status: StatusCodes.OK,
+            success: true,
+            message: 'Leave applications with user information and number of days retrieved successfully',
+            data: {
+                leaves: leavesWithDays,
+                totalPages,
+                currentPage: page,
+            },
+        });
+    } catch (error) {
+        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
+    }
+};
 
 module.exports = {
     applyLeave,
     updateLeaveStatus,
     getAllLeaves,
     getLeaveById,
-    deleteLeave
+    deleteLeave,
+    getLeavesByEmployeeId
 }
