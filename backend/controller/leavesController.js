@@ -207,15 +207,8 @@ const deleteLeave = async (req, res, next) => {
             employee.leaves.splice(leaveIndex, 1);
         }
 
-        // Delete attendance records for the leave period
         const fromDate = leave.fromDate.setHours(0, 0, 0, 0);
         const toDate = leave.toDate.setHours(23, 59, 59, 999);
-
-        // employee.attendances.forEach((attendance, index) => {
-        //     if (attendance.date >= fromDate && attendance.date <= toDate && attendance.type_attendance === 'leave') {
-        //         employee.attendances.splice(index, 1);
-        //     }
-        // });
 
         await Attendance.updateMany(
             {
@@ -231,15 +224,6 @@ const deleteLeave = async (req, res, next) => {
                 },
             }
         );
-
-        // await Employee.updateMany(
-        //     { 'attendances.date': { $gte: fromDate, $lte: toDate } },
-        //     {
-        //         $pull: {
-        //             attendances: { date: { $gte: fromDate, $lte: toDate } }
-        //         }
-        //     }
-        // );
 
         await Employee.updateMany(
             { _id: employee._id, 'attendances.date': { $gte: fromDate, $lte: toDate } },
@@ -291,7 +275,7 @@ const getLeavesByEmployeeId = async (req, res, next) => {
             const fromDate = new Date(leave.fromDate);
             const toDate = new Date(leave.toDate);
             const diffInMilliseconds = toDate - fromDate;
-            const days = diffInMilliseconds / (1000 * 60 * 60 * 24); // Convert milliseconds to days
+            const days = diffInMilliseconds / (1000 * 60 * 60 * 24);
             return { ...leave.toObject(), numberOfDays: days };
         });
 

@@ -42,7 +42,7 @@ const registerUser = async (req, res, next) => {
     console.error("Error during registration:", error);
     return next(new ErrorHander("Registration failed", StatusCodes.INTERNAL_SERVER_ERROR));
   }
-}
+};
 
 const loginUser = async (req, res, next) => {
   try {
@@ -83,7 +83,7 @@ const loginUser = async (req, res, next) => {
     console.error("Error during login:", error);
     return next(new ErrorHander("Authentication failed", StatusCodes.INTERNAL_SERVER_ERROR));
   }
-}
+};
 
 const logout = async (req, res, next) => {
   return res.status(StatusCodes.OK).json({
@@ -91,7 +91,7 @@ const logout = async (req, res, next) => {
     success: true,
     message: "User logged out successfully",
   });
-}
+};
 
 module.exports = {
   registerUser,

@@ -668,7 +668,7 @@ const getEmployeeAttendanceList = async (req, res, next) => {
     }
 };
 
-const getWeeklyEmployeeAttendanceCount = async (req, res, next) => {
+async function getWeeklyEmployeeAttendanceCount(req, res, next) {
     try {
         const currentDate = moment().startOf('isoWeek');
         const endDate = currentDate.clone().add(6, 'days');
@@ -715,7 +715,7 @@ const getWeeklyEmployeeAttendanceCount = async (req, res, next) => {
     }
 };
 
-const getAllAttendance = async (req, res, next) => {
+async function getAllAttendance(req, res, next) {
     try {
         const allAttendance = await Attendance.find().populate({
             path: 'attendanceDetails.employeeId',

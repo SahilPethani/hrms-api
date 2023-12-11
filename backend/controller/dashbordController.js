@@ -2,10 +2,10 @@ const { StatusCodes } = require("http-status-codes");
 const ErrorHandler = require("../middleware/errorhander");
 const Employee = require("../models/employeeModel");
 const Attendance = require("../models/attendanceModel");
+const Leave = require("../models/leavesModel");
 
 const getEmployeeCounts = async (req, res, next) => {
     try {
-        // const currentDate = new Date().toISOString().split('T')[0];
         const currentDateIST = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
         const currentDate = new Date(currentDateIST).setHours(0, 0, 0, 0);
 
@@ -15,8 +15,8 @@ const getEmployeeCounts = async (req, res, next) => {
         const active = await Employee.countDocuments({ status: 1 });
         const inActive = await Employee.countDocuments({ status: 0 });
 
-        const employees = await Employee.find()
-
+        const employees = await Employee.find();
+        const leaveCounts = await Leave.countDocuments();
         const todayAttendance = [];
 
         for (const employee of employees) {
@@ -24,10 +24,13 @@ const getEmployeeCounts = async (req, res, next) => {
                 _id: employee._id,
                 present: false,
             };
+
+            // Check for attendance
             const todayAttendanceRecord = await Attendance.findOne({
                 date: currentDate,
                 "attendanceDetails.employeeId": employee._id,
             });
+
             if (todayAttendanceRecord) {
                 const employeeDetails = todayAttendanceRecord.attendanceDetails.find(
                     (detail) => detail.employeeId.equals(employee._id)
@@ -36,14 +39,12 @@ const getEmployeeCounts = async (req, res, next) => {
                     employeeAttendance.present = true;
                 }
             }
+
             todayAttendance.push(employeeAttendance);
         }
 
-        const presentCount = todayAttendance.filter(employee => employee.present).length;
-
-        // Count the number of absent employees
-        const absentCount = todayAttendance.filter(employee => !employee.present).length;
-
+        const presentCount = todayAttendance.filter((employee) => employee.present).length;
+        const absentCount = todayAttendance.filter((employee) => !employee.present).length;
 
         return res.status(StatusCodes.OK).json({
             status: StatusCodes.OK,
@@ -55,7 +56,8 @@ const getEmployeeCounts = async (req, res, next) => {
                 active,
                 inActive,
                 presentCount,
-                absentCount
+                absentCount,
+                leaveCounts
             },
         });
     } catch (error) {

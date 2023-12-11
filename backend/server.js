@@ -9,10 +9,10 @@ const server = app.listen(process.env.PORT, () => {
     console.log(`Server is working on ${process.env.PORT}`)
 })
 
-process.on("unhandledRejection", (err)=>{
+process.on("unhandledRejection", (err) => {
     console.log(`Error: ${err.message}`);
     console.log(`Shutting down the server due to Unhandeled Promis Rejection`);
-    server.close(()=>{
+    server.close(() => {
         process.exit(1);
     });
 });

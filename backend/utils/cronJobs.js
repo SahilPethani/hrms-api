@@ -13,7 +13,7 @@
 // //         console.log('Holiday punches added successfully.');
 // //     }
 // // }, {
-// //     timezone: 'Asia/Kolkata', 
+// //     timezone: 'Asia/Kolkata',
 // // });
 // const jobDaily = cron.schedule('0 0 * * *', async () => {
 //     const currentDateIST = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
@@ -27,7 +27,7 @@
 //         console.log('Holiday punches added successfully.');
 //     }
 // }, {
-//     timezone: 'Asia/Kolkata', 
+//     timezone: 'Asia/Kolkata',
 // });
 
 
@@ -38,7 +38,7 @@
 // //     console.log('Weekend punches added successfully.');
 // // }, {
 // //     scheduled: true,
-// //     timezone: 'Asia/Kolkata', 
+// //     timezone: 'Asia/Kolkata',
 // // });
 
 
@@ -49,7 +49,7 @@
 //     console.log('Weekend punches added successfully.');
 // }, {
 //     scheduled: true,
-//     timezone: 'Asia/Kolkata', 
+//     timezone: 'Asia/Kolkata',
 // });
 
 // // Start both cron jobs

@@ -248,7 +248,7 @@ const addLeaveAttendance = async (employeeId, fromDate, toDate) => {
             });
 
             const newAttendance = {
-                date:  new Date(currentDate),
+                date: new Date(currentDate),
                 present: 0,
                 type_attendance: "leave",
             };
@@ -277,7 +277,7 @@ const addLeaveAttendance = async (employeeId, fromDate, toDate) => {
                 // if (existingAttendanceIndex !== -1) {
                 //     employee.attendances[existingAttendanceIndex].present = 0;
                 // } else {
-                    
+
                 // }
             } else {
                 todayAttendance.attendanceDetails.forEach(detail => {

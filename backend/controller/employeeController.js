@@ -88,7 +88,7 @@ const addEmployee = async (req, res, next) => {
     } catch (error) {
         return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
-}
+};
 
 const getAllEmployees = async (req, res, next) => {
     try {
