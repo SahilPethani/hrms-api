@@ -3,13 +3,13 @@ const firebaseStorage = require("firebase/storage");
 const multer = require("multer");
 
 firebaseApp.initializeApp({
-    apiKey: "AIzaSyD2-Hc6uckQtndlsXt70PG2O_J4qQtG2k0",
-    authDomain: "employee-attendance-syst-c7020.firebaseapp.com",
-    projectId: "employee-attendance-syst-c7020",
-    storageBucket: "employee-attendance-syst-c7020.appspot.com",
-    messagingSenderId: "367085156232",
-    appId: "1:367085156232:web:6505fe4718af3130f52c3d",
-    measurementId: "G-DGY5B51XRL"
+    apiKey: "AIzaSyAiavYHC4hH8z9Mdu-0A8cUzcrX4Dzg7aY",
+    authDomain: "hrm-codeline.firebaseapp.com",
+    projectId: "hrm-codeline",
+    storageBucket: "hrm-codeline.appspot.com",
+    messagingSenderId: "920500645964",
+    appId: "1:920500645964:web:9e4ef424462c2b3d8904e9",
+    measurementId: "G-46VFXQJYQQ"
     // apiKey: "AIzaSyA_0YINIAKeAeExv09JHJcwaQOT-p5yOiw",
     // authDomain: "hrms-system-codeline.firebaseapp.com",
     // projectId: "hrms-system-codeline",
