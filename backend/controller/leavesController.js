@@ -7,7 +7,7 @@ const Attendance = require("../models/attendanceModel");
 
 const applyLeave = async (req, res, next) => {
     try {
-        const { employeeId, fromDate, toDate, type, duration, comments } = req.body;
+        const { employeeId, fromDate, toDate, type, comments, from_time, to_time, reason } = req.body;
 
         const today = new Date().setHours(0, 0, 0, 0);
         const selectedFromDate = new Date(fromDate).setHours(0, 0, 0, 0);
@@ -17,11 +17,18 @@ const applyLeave = async (req, res, next) => {
         }
 
         let selectedToDate = null;
+        let hours = 0;
 
-        if (duration === 'Full Day') {
+        if (type === 'hourly' && (!from_time || !to_time)) {
+            return next(new ErrorHandler('From-time and To-time are required for hourly leave', StatusCodes.BAD_REQUEST));
+        }
+
+        if (type === 'Full Day') {
             selectedToDate = selectedFromDate;
-        } else if (duration === 'First Half' || duration === 'Second Half') {
+            hours = 8;
+        } else if (type === 'Pre Lunch half day' || type === 'Post lunch Half day') {
             selectedToDate = selectedFromDate;
+            hours = 4;
         } else {
             selectedToDate = new Date(toDate).setHours(0, 0, 0, 0);
 
@@ -30,7 +37,6 @@ const applyLeave = async (req, res, next) => {
             }
         }
 
-        // Check for overlapping leave
         const overlappingLeave = await Leaves.findOne({
             employeeId,
             $or: [
@@ -54,7 +60,10 @@ const applyLeave = async (req, res, next) => {
             fromDate: new Date(selectedFromDate),
             toDate: new Date(selectedToDate),
             type,
-            duration,
+            from_time,
+            to_time,
+            hours,
+            reason,
             status: 'Pending',
             comments,
         });
@@ -79,6 +88,7 @@ const applyLeave = async (req, res, next) => {
         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
+
 
 const updateLeaveStatus = async (req, res, next) => {
     try {

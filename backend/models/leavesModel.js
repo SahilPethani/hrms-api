@@ -4,34 +4,50 @@ const leavesSchema = new mongoose.Schema({
   employeeId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Employee',
-    required: true
+    required: true,
+  },
+  date: {
+    type: Date,
+    default: Date.now, 
   },
   fromDate: {
     type: Date,
-    required: true
+    required: true,
   },
   toDate: {
     type: Date,
-    required: true
+    required: true,
+  },
+  reason: {
+    type: String,
+    enum: ['Casual Leave', 'Sick Leave', 'Marriage Leave', 'Privilege Leave', 'Maternity Leave'],
+    required: true,
+  },
+  from_time: {
+    type: String,
+    default: "0:00"
+  },
+  to_time: {
+    type: String,
+    default: "0:00"
+  },
+  hours: {
+    type: Number,
+    default: 0
   },
   type: {
     type: String,
-    enum: ['Casual Leave', 'Sick Leave', 'Marriage Leave', 'Privilege Leave', 'Maternity Leave'],
-    required: true
-  },
-  duration: {
-    type: String,
-    enum: ['Full Day', 'First Half', 'Second Half', 'Multiple Days'],
-    required: true
+    enum: ['Full Day', 'Pre Lunch half day', 'Post lunch Half day', 'hourly', 'Multiple Days'],
+    required: true,
   },
   status: {
     type: String,
     enum: ['Approved', 'Rejected', 'Pending'],
-    default: 'Pending'
+    default: 'Pending',
   },
   comments: {
-    type: String
-  }
+    type: String,
+  },
 });
 
 const Leaves = mongoose.model('Leaves', leavesSchema);

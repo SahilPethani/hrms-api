@@ -3,13 +3,20 @@ const firebaseStorage = require("firebase/storage");
 const multer = require("multer");
 
 firebaseApp.initializeApp({
-    apiKey: "AIzaSyA_0YINIAKeAeExv09JHJcwaQOT-p5yOiw",
-    authDomain: "hrms-system-codeline.firebaseapp.com",
-    projectId: "hrms-system-codeline",
-    storageBucket: "hrms-system-codeline.appspot.com",
-    messagingSenderId: "469618831214",
-    appId: "1:469618831214:web:538ae5d2bc5cfd39209b7f",
-    measurementId: "G-5BX6XFYVCG"
+    apiKey: "AIzaSyD2-Hc6uckQtndlsXt70PG2O_J4qQtG2k0",
+    authDomain: "employee-attendance-syst-c7020.firebaseapp.com",
+    projectId: "employee-attendance-syst-c7020",
+    storageBucket: "employee-attendance-syst-c7020.appspot.com",
+    messagingSenderId: "367085156232",
+    appId: "1:367085156232:web:6505fe4718af3130f52c3d",
+    measurementId: "G-DGY5B51XRL"
+    // apiKey: "AIzaSyA_0YINIAKeAeExv09JHJcwaQOT-p5yOiw",
+    // authDomain: "hrms-system-codeline.firebaseapp.com",
+    // projectId: "hrms-system-codeline",
+    // storageBucket: "hrms-system-codeline.appspot.com",
+    // messagingSenderId: "469618831214",
+    // appId: "1:469618831214:web:538ae5d2bc5cfd39209b7f",
+    // measurementId: "G-5BX6XFYVCG"
 });
 
 const storage = firebaseStorage.getStorage();
