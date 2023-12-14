@@ -8,7 +8,7 @@ const leavesSchema = new mongoose.Schema({
   },
   date: {
     type: Date,
-    default: Date.now, 
+    default: Date.now,
   },
   fromDate: {
     type: Date,
@@ -35,7 +35,7 @@ const leavesSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  one_day_leave_type:{
+  one_day_leave_type: {
     type: String,
   },
   type: {

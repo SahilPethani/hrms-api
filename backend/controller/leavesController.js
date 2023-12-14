@@ -12,23 +12,25 @@ const applyLeave = async (req, res, next) => {
         const today = new Date().setHours(0, 0, 0, 0);
         const selectedFromDate = new Date(fromDate);
 
-        if (selectedFromDate < today) { 
+        if (selectedFromDate < today) {
             return next(new ErrorHandler('From date must be in the future', StatusCodes.BAD_REQUEST));
         }
 
         let selectedToDate = null;
         let hours = 0;
         let one_day_leave_type = "";
-        let from_time1 = from_time;
-        let to_time1 = to_time;
+        let formattedFromTime = from_time;
+        let formattedToTime = to_time;
 
         if (type === 'hourly' && (!from_time || !to_time)) {
             return next(new ErrorHandler('From-time and To-time are required for hourly leave', StatusCodes.BAD_REQUEST));
         }
 
         if (type === 'hourly') {
-            one_day_leave_type = 'hourly'
+            selectedToDate = selectedFromDate;
+            one_day_leave_type = 'hourly';
         }
+        console.log("🚀 ~ file: leavesController.js:20 ~ applyLeave ~ selectedToDate:", selectedToDate)
 
         if (type === 'Full Day') {
             selectedToDate = selectedFromDate;
@@ -38,15 +40,15 @@ const applyLeave = async (req, res, next) => {
             selectedToDate = selectedFromDate;
             hours = 4;
             if (type === 'Pre Lunch half day') {
-                from_time1 = new Date(selectedFromDate).setHours(9, 0, 0, 0);
-                to_time1 = new Date(selectedFromDate).setHours(13, 0, 0, 0);
+                formattedFromTime = '09:00 AM';
+                formattedToTime = '13:00 PM';
                 one_day_leave_type = 'Pre Lunch half day';
             } else if (type === 'Post lunch Half day') {
-                from_time1 = new Date(selectedFromDate).setHours(13, 45, 0, 0);
-                to_time1 = new Date(selectedFromDate).setHours(18, 30, 0, 0);
+                formattedFromTime = '13:45 PM';
+                formattedToTime = '18:30 PM';
                 one_day_leave_type = 'Post lunch Half day';
             }
-        } else {
+        } else if (type === 'Maternity Leave') {
             selectedToDate = new Date(toDate);
 
             if (selectedToDate < today || selectedToDate < selectedFromDate) {
@@ -77,8 +79,8 @@ const applyLeave = async (req, res, next) => {
             fromDate: selectedFromDate,
             toDate: selectedToDate,
             type,
-            from_time: from_time1,
-            to_time: to_time1,
+            from_time: formattedFromTime,
+            to_time: formattedToTime,
             hours,
             one_day_leave_type,
             reason,
@@ -106,7 +108,6 @@ const applyLeave = async (req, res, next) => {
         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
-
 
 
 const updateLeaveStatus = async (req, res, next) => {
@@ -303,22 +304,12 @@ const getLeavesByEmployeeId = async (req, res, next) => {
         const leavesWithDays = leaves.map((leave) => {
             const fromDate = new Date(leave.fromDate);
             const toDate = new Date(leave.toDate);
-            const fromTime = new Date(Number(leave.from_time));
-            const toTime = new Date(Number(leave.to_time));
-
-            const isValidFromTime = !isNaN(fromTime.getTime());
-            const isValidToTime = !isNaN(toTime.getTime());
-            const fromTimeFormatted = isValidFromTime ? fromTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Invalid Date';
-            const toTimeFormatted = isValidToTime ? toTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Invalid Date';
-
             const diffInMilliseconds = toDate - fromDate;
             const days = diffInMilliseconds / (1000 * 60 * 60 * 24);
 
             return {
                 ...leave.toObject(),
                 numberOfDays: days,
-                from_time: fromTimeFormatted,
-                to_time: toTimeFormatted,
             };
         });
 
