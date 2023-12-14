@@ -10,9 +10,9 @@ const applyLeave = async (req, res, next) => {
         const { employeeId, fromDate, toDate, type, comments, from_time, to_time, reason } = req.body;
 
         const today = new Date().setHours(0, 0, 0, 0);
-        const selectedFromDate = new Date(fromDate).setHours(0, 0, 0, 0);
+        const selectedFromDate = new Date(fromDate);
 
-        if (selectedFromDate < today) {
+        if (selectedFromDate < today) { 
             return next(new ErrorHandler('From date must be in the future', StatusCodes.BAD_REQUEST));
         }
 
@@ -33,7 +33,7 @@ const applyLeave = async (req, res, next) => {
         if (type === 'Full Day') {
             selectedToDate = selectedFromDate;
             hours = 8;
-            one_day_leave_type = 'Full Day'
+            one_day_leave_type = 'Full Day';
         } else if (type === 'Pre Lunch half day' || type === 'Post lunch Half day') {
             selectedToDate = selectedFromDate;
             hours = 4;
@@ -47,7 +47,8 @@ const applyLeave = async (req, res, next) => {
                 one_day_leave_type = 'Post lunch Half day';
             }
         } else {
-            selectedToDate = new Date(toDate).setHours(0, 0, 0, 0);
+            selectedToDate = new Date(toDate);
+
             if (selectedToDate < today || selectedToDate < selectedFromDate) {
                 return next(new ErrorHandler('To date must be in the future and not before the from date', StatusCodes.BAD_REQUEST));
             }
@@ -73,8 +74,8 @@ const applyLeave = async (req, res, next) => {
 
         const leaveApplication = new Leaves({
             employeeId,
-            fromDate: new Date(selectedFromDate),
-            toDate: new Date(selectedToDate),
+            fromDate: selectedFromDate,
+            toDate: selectedToDate,
             type,
             from_time: from_time1,
             to_time: to_time1,
@@ -105,6 +106,7 @@ const applyLeave = async (req, res, next) => {
         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
+
 
 
 const updateLeaveStatus = async (req, res, next) => {
