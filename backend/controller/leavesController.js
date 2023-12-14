@@ -28,25 +28,24 @@ const applyLeave = async (req, res, next) => {
 
         if (type === 'hourly') {
             selectedToDate = selectedFromDate;
-            one_day_leave_type = 'hourly';
+            one_day_leave_type = 'One Day';
         }
-        console.log("🚀 ~ file: leavesController.js:20 ~ applyLeave ~ selectedToDate:", selectedToDate)
 
         if (type === 'Full Day') {
             selectedToDate = selectedFromDate;
             hours = 8;
-            one_day_leave_type = 'Full Day';
+            one_day_leave_type = 'One Day';
         } else if (type === 'Pre Lunch half day' || type === 'Post lunch Half day') {
             selectedToDate = selectedFromDate;
             hours = 4;
             if (type === 'Pre Lunch half day') {
                 formattedFromTime = '09:00 AM';
                 formattedToTime = '13:00 PM';
-                one_day_leave_type = 'Pre Lunch half day';
+                one_day_leave_type = 'One Day';
             } else if (type === 'Post lunch Half day') {
                 formattedFromTime = '13:45 PM';
                 formattedToTime = '18:30 PM';
-                one_day_leave_type = 'Post lunch Half day';
+                one_day_leave_type = 'One Day';
             }
         } else if (type === 'Maternity Leave') {
             selectedToDate = new Date(toDate);
@@ -313,20 +312,26 @@ const getLeavesByEmployeeId = async (req, res, next) => {
             };
         });
 
+        const currentPageItems = leavesWithDays.length;
+
         res.status(StatusCodes.OK).json({
             status: StatusCodes.OK,
             success: true,
             message: 'Leave applications with user information and number of days retrieved successfully',
-            data: {
-                leaves: leavesWithDays,
-                totalPages,
-                currentPage: page,
-            },
+            data: leavesWithDays,
+            pagination: {
+                total_items: totalLeaves,
+                total_pages: totalPages,
+                current_page_item: currentPageItems,
+                page_no: parseInt(page),
+                items_per_page: parseInt(pageSize)
+            }
         });
     } catch (error) {
         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
+
 
 module.exports = {
     applyLeave,
