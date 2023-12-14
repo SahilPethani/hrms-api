@@ -47,7 +47,7 @@ const applyLeave = async (req, res, next) => {
                 formattedToTime = '18:30 PM';
                 one_day_leave_type = 'One Day';
             }
-        } else if (type === 'Maternity Leave') {
+        } else if (type === 'Multiple Days') {
             selectedToDate = new Date(toDate);
 
             if (selectedToDate < today || selectedToDate < selectedFromDate) {
