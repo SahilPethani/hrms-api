@@ -18,20 +18,36 @@ const applyLeave = async (req, res, next) => {
 
         let selectedToDate = null;
         let hours = 0;
+        let one_day_leave_type = "";
+        let from_time1 = from_time;
+        let to_time1 = to_time;
 
         if (type === 'hourly' && (!from_time || !to_time)) {
             return next(new ErrorHandler('From-time and To-time are required for hourly leave', StatusCodes.BAD_REQUEST));
         }
 
+        if (type === 'hourly') {
+            one_day_leave_type = 'hourly'
+        }
+
         if (type === 'Full Day') {
             selectedToDate = selectedFromDate;
             hours = 8;
+            one_day_leave_type = 'Full Day'
         } else if (type === 'Pre Lunch half day' || type === 'Post lunch Half day') {
             selectedToDate = selectedFromDate;
             hours = 4;
+            if (type === 'Pre Lunch half day') {
+                from_time1 = new Date(selectedFromDate).setHours(9, 0, 0, 0);
+                to_time1 = new Date(selectedFromDate).setHours(13, 0, 0, 0);
+                one_day_leave_type = 'Pre Lunch half day';
+            } else if (type === 'Post lunch Half day') {
+                from_time1 = new Date(selectedFromDate).setHours(13, 45, 0, 0);
+                to_time1 = new Date(selectedFromDate).setHours(18, 30, 0, 0);
+                one_day_leave_type = 'Post lunch Half day';
+            }
         } else {
             selectedToDate = new Date(toDate).setHours(0, 0, 0, 0);
-
             if (selectedToDate < today || selectedToDate < selectedFromDate) {
                 return next(new ErrorHandler('To date must be in the future and not before the from date', StatusCodes.BAD_REQUEST));
             }
@@ -60,9 +76,10 @@ const applyLeave = async (req, res, next) => {
             fromDate: new Date(selectedFromDate),
             toDate: new Date(selectedToDate),
             type,
-            from_time,
-            to_time,
+            from_time: from_time1,
+            to_time: to_time1,
             hours,
+            one_day_leave_type,
             reason,
             status: 'Pending',
             comments,
@@ -281,12 +298,26 @@ const getLeavesByEmployeeId = async (req, res, next) => {
                 select: 'first_name last_name avatar userId designation',
             });
 
-        const leavesWithDays = leaves.map(leave => {
+        const leavesWithDays = leaves.map((leave) => {
             const fromDate = new Date(leave.fromDate);
             const toDate = new Date(leave.toDate);
+            const fromTime = new Date(Number(leave.from_time));
+            const toTime = new Date(Number(leave.to_time));
+
+            const isValidFromTime = !isNaN(fromTime.getTime());
+            const isValidToTime = !isNaN(toTime.getTime());
+            const fromTimeFormatted = isValidFromTime ? fromTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Invalid Date';
+            const toTimeFormatted = isValidToTime ? toTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Invalid Date';
+
             const diffInMilliseconds = toDate - fromDate;
             const days = diffInMilliseconds / (1000 * 60 * 60 * 24);
-            return { ...leave.toObject(), numberOfDays: days };
+
+            return {
+                ...leave.toObject(),
+                numberOfDays: days,
+                from_time: fromTimeFormatted,
+                to_time: toTimeFormatted,
+            };
         });
 
         res.status(StatusCodes.OK).json({
