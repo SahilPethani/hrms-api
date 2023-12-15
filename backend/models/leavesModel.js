@@ -37,10 +37,11 @@ const leavesSchema = new mongoose.Schema({
   },
   one_day_leave_type: {
     type: String,
+    enum: ['Full Day', 'Pre Lunch half day', 'Post lunch Half day', 'hourly', '']
   },
   type: {
     type: String,
-    enum: ['Full Day', 'Pre Lunch half day', 'Post lunch Half day', 'hourly', 'Multiple Days'],
+    enum: ['One Day', 'More Then One Day'],
     required: true,
   },
   status: {
