@@ -123,7 +123,7 @@ const updateLeaveStatus = async (req, res, next) => {
         }
 
         if (newStatus === 'Approved' && leave.status !== 'Approved') {
-            await addLeaveAttendance(leave.employeeId, leave.fromDate, leave.toDate);
+            await addLeaveAttendance(leave.employeeId, leave.fromDate, leave.toDate, leave.type, leave.from_time, leave.to_time);
         } else if (newStatus === 'Approved' && leave.status === 'Approved') {
             return res.status(StatusCodes.OK).json({
                 status: StatusCodes.OK,

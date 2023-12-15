@@ -13,7 +13,7 @@ router
 
 router
     .route("/leave/delete/:id")
-    .delete(authenticateUser, authorizePermission("employee"), deleteLeave);
+    .delete(authenticateUser, deleteLeave);
 
 //admin
 router
@@ -30,7 +30,7 @@ router
 
 router
     .route("/leave/employee/:employeeId")
-    .get(authenticateUser, authorizePermission("employee"), getLeavesByEmployeeId);
+    .get(authenticateUser, getLeavesByEmployeeId);
 
 
 module.exports = router;

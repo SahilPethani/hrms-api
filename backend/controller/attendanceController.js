@@ -493,6 +493,7 @@ const getEmployeeAttendanceDetails = async (req, res, next) => {
             checkInTime: '00:00',
             checkOutTime: '00:00',
             totalWorkingHours: '00:00',
+            hoursWithbreak: '00:00',
             overtime: '00:00',
             type: '',
             present: false,
@@ -524,6 +525,7 @@ const getEmployeeAttendanceDetails = async (req, res, next) => {
 
                     if (!isNaN(totalHours) && isFinite(totalHours)) {
                         AttendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHours);
+                        AttendanceDetail.hoursWithbreak = formatTotalWorkingHours(totalHours - 1);
 
                         // Calculate overtime only if total working hours exceed 8 hours
                         if (totalHours > 8) {

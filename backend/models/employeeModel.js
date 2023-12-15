@@ -12,6 +12,7 @@ const AttendanceSchema = new mongoose.Schema({
   date: { type: Date, default: Date.now },
   present: { type: Number, enum: [0, 1], required: true },
   type_attendance: { type: String, enum: ["present", "absent", "weekend", "holiday", "leave"], required: true },
+  type_leave: { type: String },
   punches: [PunchSchema],
 });
 

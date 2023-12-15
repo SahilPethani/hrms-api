@@ -228,7 +228,7 @@ const addPunchForHoliday = async (date) => {
     }
 };
 
-const addLeaveAttendance = async (employeeId, fromDate, toDate) => {
+const addLeaveAttendance = async (employeeId, fromDate, toDate, type, from_time, to_time) => {
     try {
         const employee = await Employee.findById(employeeId);
 
@@ -248,14 +248,14 @@ const addLeaveAttendance = async (employeeId, fromDate, toDate) => {
             });
 
             const newAttendance = {
-                date: new Date(currentDate),
+                date: currentDate,
                 present: 0,
                 type_attendance: "leave",
+                type_leave: type,
             };
             employee.attendances.push(newAttendance);
 
             if (!todayAttendance) {
-
                 await Attendance.findOneAndUpdate(
                     { date: currentDate },
                     {
@@ -264,6 +264,8 @@ const addLeaveAttendance = async (employeeId, fromDate, toDate) => {
                                 employeeId: employee._id,
                                 present: 0,
                                 type_attendance: "leave",
+                                type_leave: type,
+                                date: currentDate,
                             },
                         },
                     },

@@ -10,6 +10,7 @@ const AttendanceDetailSchema = new mongoose.Schema({
     employeeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee', required: true },
     present: { type: Number, enum: [0, 1], required: true },
     type_attendance: { type: String, enum: ["present", "absent", "weekend", "holiday", "leave"], required: true },
+    type_leave: { type: String },
     date: { type: Date, default: Date.now },
     punches: [PunchSchema],
 });
