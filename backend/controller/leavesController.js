@@ -74,7 +74,7 @@ const applyLeave = async (req, res, next) => {
             ]
         });
 
-        if (overlappingLeave.status !== "Rejected") {
+        if (overlappingLeave) {
             return next(new ErrorHandler('Leave already exists for the specified date range', StatusCodes.BAD_REQUEST));
         }
 
