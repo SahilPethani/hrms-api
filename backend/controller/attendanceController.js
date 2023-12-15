@@ -519,10 +519,6 @@ const getEmployeeAttendanceDetails = async (req, res, next) => {
                 }
                 AttendanceDetail.checkInTime = firstPunch ? firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' }) : new Date("00:00");
 
-                const overtimeStartTime = new Date(attendanceRecord.date);
-                overtimeStartTime.setHours(18, 30, 0, 0);
-                overtimeStartTime.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
-                
                 if (!excludeLastPunchInTime) {
                     const totalHours = (lastPunchOut - firstPunch) / (1000 * 60 * 60);
 
@@ -531,8 +527,10 @@ const getEmployeeAttendanceDetails = async (req, res, next) => {
 
                         // Calculate overtime only if total working hours exceed 8 hours
                         if (totalHours > 8) {
-                            const overtimeMinutes = Math.max(0, lastPunchOut - overtimeStartTime) / (1000 * 60);
+                            const overtimeMinutes = Math.max(0, totalHours - 8) * 60; // Calculate overtime in minutes
                             AttendanceDetail.overtime = formatTotalWorkingHours(overtimeMinutes / 60); // Convert minutes to hours
+                        } else {
+                            AttendanceDetail.overtime = "00h:00m"; // No overtime
                         }
                     } else {
                         AttendanceDetail.totalWorkingHours = new Date("00:00");
