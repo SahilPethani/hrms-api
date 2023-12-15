@@ -20,7 +20,7 @@ const leavesSchema = new mongoose.Schema({
   },
   reason: {
     type: String,
-    enum: ['Casual Leave', 'Sick Leave', 'Marriage Leave', 'Privilege Leave', 'Maternity Leave'],
+    enum: ['Casual Leave', 'Sick Leave', 'Family Function', 'Exams', 'Medical Emergency', 'Personal Work', "Death of family member", 'Emergency Leave', 'College Work'],
     required: true,
   },
   from_time: {

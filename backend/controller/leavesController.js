@@ -60,8 +60,6 @@ const applyLeave = async (req, res, next) => {
             }
         }
 
-
-
         const overlappingLeave = await Leaves.findOne({
             employeeId,
             $or: [
@@ -130,7 +128,7 @@ const updateLeaveStatus = async (req, res, next) => {
         }
 
         if (newStatus === 'Approved' && leave.status !== 'Approved') {
-            await addLeaveAttendance(leave.employeeId, leave.fromDate, leave.toDate, leave.type, leave.from_time, leave.to_time);
+            await addLeaveAttendance(leave.employeeId, leave.fromDate, leave.toDate, leave.type, leave.one_day_leave_type, leave.from_time, leave.to_time);
         } else if (newStatus === 'Approved' && leave.status === 'Approved') {
             return res.status(StatusCodes.OK).json({
                 status: StatusCodes.OK,
@@ -214,7 +212,6 @@ const getAllLeaves = async (req, res, next) => {
         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
-
 
 const getLeaveById = async (req, res, next) => {
     try {
