@@ -527,7 +527,7 @@ const getEmployeeAttendanceDetails = async (req, res, next) => {
 
                         // Calculate overtime only if total working hours exceed 8 hours
                         if (totalHours > 8) {
-                            const overtimeMinutes = Math.max(0, totalHours - 8) * 60; // Calculate overtime in minutes
+                            const overtimeMinutes = Math.max(0, totalHours - 8 - 1) * 60; // Calculate overtime in minutes
                             AttendanceDetail.overtime = formatTotalWorkingHours(overtimeMinutes / 60); // Convert minutes to hours
                         } else {
                             AttendanceDetail.overtime = "00h:00m"; // No overtime
