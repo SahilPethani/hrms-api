@@ -518,20 +518,26 @@ const getEmployeeAttendanceDetails = async (req, res, next) => {
                     AttendanceDetail.checkOutTime = '00:00';
                 }
                 AttendanceDetail.checkInTime = firstPunch ? firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' }) : new Date("00:00");
+
+                const overtimeStartTime = new Date(attendanceRecord.date);
+                overtimeStartTime.setHours(18, 30, 0, 0); // Set the overtime start time to 6:30 PM
+
                 if (!excludeLastPunchInTime) {
                     const totalHours = (lastPunchOut - firstPunch) / (1000 * 60 * 60);
+
                     if (!isNaN(totalHours) && isFinite(totalHours)) {
                         AttendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHours);
+
+                        // Calculate overtime only if total working hours exceed 8 hours
+                        if (totalHours > 8) {
+                            const overtimeMinutes = Math.max(0, lastPunchOut - overtimeStartTime) / (1000 * 60);
+                            AttendanceDetail.overtime = formatTotalWorkingHours(overtimeMinutes / 60); // Convert minutes to hours
+                        }
                     } else {
                         AttendanceDetail.totalWorkingHours = new Date("00:00");
                     }
                 }
-                const overtimeStartTime = new Date(attendanceRecord.date).setHours(18, 30, 0, 0); // 6:30 PM
-                const lastPunchOutTime = lastPunchOut.getTime();
-                if (lastPunchOutTime > overtimeStartTime) {
-                    const overtimeMinutes = (lastPunchOutTime - overtimeStartTime) / (1000 * 60);
-                    AttendanceDetail.overtime = formatTotalWorkingHours(overtimeMinutes / 60); // Convert minutes to hours
-                }
+
                 if (attendanceRecord.type_attendance === 'present') {
                     AttendanceDetail.present = true;
                     AttendanceDetail.type = "present"

@@ -8,8 +8,10 @@ function generateToken(user) {
     userId: user._id,
     role: user.role,
   };
+  const expiresInDays = 5;
+  const expirationTimeInSeconds = expiresInDays * 24 * 60 * 60;
 
-  return jwt.sign(payload, secret_key, { expiresIn: '24h' });
+  return jwt.sign(payload, secret_key, { expiresIn: expirationTimeInSeconds });
 }
 
 // Verify a JWT token
