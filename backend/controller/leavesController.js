@@ -149,7 +149,7 @@ const updateLeaveStatus = async (req, res, next) => {
 
 const getAllLeaves = async (req, res, next) => {
     try {
-        const { fromDate, toDate, status, type, search_text } = req.query;
+        const { fromDate, toDate, status, type, search_text, page_no, items_per_page } = req.query;
 
         const filters = {};
         if (fromDate) filters.fromDate = { $gte: new Date(fromDate) };
@@ -164,7 +164,18 @@ const getAllLeaves = async (req, res, next) => {
                 { 'employeeId.userId': { $regex: new RegExp(search_text, 'i') } },
             ];
         }
+
+        const pageOptions = {
+            page: parseInt(page_no, 10) || 1,
+            pageSize: parseInt(items_per_page, 10) || 10,
+        };
+
+        const totalLeaves = await Leaves.countDocuments(filters);
+        const totalPages = Math.ceil(totalLeaves / pageOptions.pageSize);
+
         const leaves = await Leaves.find(filters)
+            .skip((pageOptions.page - 1) * pageOptions.pageSize)
+            .limit(pageOptions.pageSize)
             .populate({
                 path: 'employeeId',
                 model: 'Employee',
@@ -184,11 +195,19 @@ const getAllLeaves = async (req, res, next) => {
             success: true,
             message: 'Leave applications with user information and number of days retrieved successfully',
             data: leavesWithDays,
+            pagination: {
+                total_items: totalLeaves,
+                total_pages: totalPages,
+                current_page_item: leavesWithDays.length,
+                page_no: pageOptions.page,
+                items_per_page: pageOptions.pageSize,
+            },
         });
     } catch (error) {
         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
+
 
 const getLeaveById = async (req, res, next) => {
     try {
