@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const PunchSchema = new mongoose.Schema({
-    type: { type: String, enum: ["punchIn", "punchOut"], required: true },
+    type: { type: String, enum: ["punchIn", "punchOut", "breakIn", "breakOut"], required: true },
     punch_time: { type: Date },
     note: { type: String },
 });
