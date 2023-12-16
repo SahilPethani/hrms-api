@@ -211,9 +211,13 @@ const breakIn = async (req, res, next) => {
             note: note,
         };
 
+        const punchOutDetails = {
+            type: "breakOut",
+            punch_time: new Date(),
+            note: note,
+        };
+
         todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches.push(punchInDetails);
-        todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].present = 1;
-        todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].type_attendance = "breakIn";
 
         await todayAttendance.save();
 
@@ -226,9 +230,6 @@ const breakIn = async (req, res, next) => {
             employee.attendances[existingAttendanceIndex].punches = todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches;
         } else {
             const attendanceData = {
-                date: todayAttendance.date,
-                present: todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].present,
-                type_attendance: todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].type_attendance,
                 punches: todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches,
             };
             employee.attendances.push(attendanceData);
@@ -294,8 +295,6 @@ const breakOut = async (req, res, next) => {
 
         // Update the Employee model's attendances array
         const attendanceData = {
-            date: todayAttendance.date,
-            present: todayAttendance.attendanceDetails[breakInIndex].present,
             punches: todayAttendance.attendanceDetails[breakInIndex].punches,
         };
 
