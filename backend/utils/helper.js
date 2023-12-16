@@ -64,6 +64,17 @@ const formatMinutesToTime = (minutes) => {
     return `${formattedHours}h:${formattedMinutes}m`;
 };
 
+
+const formatBreakTime = (breakTimeInMinutes) => {
+    const hours = Math.floor(breakTimeInMinutes / 60);
+    const minutes = Math.floor(breakTimeInMinutes % 60);
+    
+    const formattedHours = hours < 10 ? `0${hours}` : hours;
+    const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
+
+    return `${formattedHours}:${formattedMinutes} hrs`;
+};
+
 module.exports = {
     generateUniqueUserId,
     calculateWorkingHours,
@@ -73,4 +84,5 @@ module.exports = {
     getDayName,
     formatTotalWorkingHours,
     formatMinutesToTime,
+    formatBreakTime
 };
