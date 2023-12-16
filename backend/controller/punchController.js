@@ -266,17 +266,16 @@ const breakOut = async (req, res, next) => {
             return next(new ErrorHandler(`Employee has not punched-in today`, StatusCodes.BAD_REQUEST));
         }
 
-        // const breakInIndex = todayAttendance.attendanceDetails.findIndex(
-        //     (detail) => detail.employeeId.equals(employee._id) && detail.type_attendance === "breakIn"
-        // );
 
-        // if (breakInIndex === -1) {
-        //     return res.status(StatusCodes.OK).json({
-        //         status: StatusCodes.OK,
-        //         success: false,
-        //         message: `Cannot perform break-out. Employee has not taken a break today.`,
-        //     });
-        // }
+        const breakInIndex = todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches.some(punch => punch.type === "breakIn")
+
+        if (breakInIndex === -1) {
+            return res.status(StatusCodes.OK).json({
+                status: StatusCodes.OK,
+                success: false,
+                message: `Cannot perform break-out. Employee has not taken a break today.`,
+            });
+        }
 
         const punchOutDetails = {
             type: "breakOut",
