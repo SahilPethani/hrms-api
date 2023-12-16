@@ -23,21 +23,13 @@ const leavesSchema = new mongoose.Schema({
     enum: ['Casual Leave', 'Sick Leave', 'Family Function', 'Exams', 'Medical Emergency', 'Personal Work', "Death of family member", 'Emergency Leave', 'College Work'],
     required: true,
   },
-  from_time: {
-    type: String,
-    default: "0:00"
-  },
-  to_time: {
-    type: String,
-    default: "0:00"
-  },
   hours: {
     type: Number,
     default: 0
   },
   one_day_leave_type: {
     type: String,
-    enum: ['Full Day', 'Pre Lunch half day', 'Post lunch Half day', 'hourly', '']
+    enum: ['Full Day', 'Pre Lunch half day', 'Post lunch Half day', '']
   },
   type: {
     type: String,

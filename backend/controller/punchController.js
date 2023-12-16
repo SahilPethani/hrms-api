@@ -167,6 +167,162 @@ const punchOut = async (req, res, next) => {
     }
 };
 
+const breakIn = async (req, res, next) => {
+    try {
+        const employeeId = req.params.id;
+        const note = req.body.note;
+
+        let employee = await Employee.findById(employeeId);
+        if (!employee) {
+            return next(new ErrorHandler(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
+        }
+
+        const currentDateIST = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+        const currentDate = new Date(currentDateIST).setHours(0, 0, 0, 0);
+
+        let todayAttendance = await Attendance.findOne({
+            date: currentDate,
+            "attendanceDetails.employeeId": employee._id,
+        });
+
+        if (!todayAttendance) {
+            return res.status(StatusCodes.OK).json({
+                status: StatusCodes.OK,
+                success: false,
+                message: `Employee hasn't punched in yet. Cannot perform break-in.`,
+            });
+        }
+
+        const employeeAttendanceDetailsIndex = todayAttendance.attendanceDetails.findIndex(
+            (detail) => detail.employeeId.equals(employee._id)
+        );
+
+        if (employeeAttendanceDetailsIndex === -1 || !todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches.some(punch => punch.type === "punchIn")) {
+            return res.status(StatusCodes.OK).json({
+                status: StatusCodes.OK,
+                success: false,
+                message: `Employee hasn't punched in yet. Cannot perform break-in.`,
+            });
+        }
+
+        const punchInDetails = {
+            type: "breakIn",
+            punch_time: new Date(),
+            note: note,
+        };
+
+        todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches.push(punchInDetails);
+        todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].present = 1;
+        todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].type_attendance = "breakIn";
+
+        await todayAttendance.save();
+
+        // Add break-in details to the Employee model's attendances array
+        const existingAttendanceIndex = employee.attendances.findIndex(
+            (attendance) => attendance.date.toISOString() === todayAttendance.date.toISOString()
+        );
+
+        if (existingAttendanceIndex !== -1) {
+            employee.attendances[existingAttendanceIndex].punches = todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches;
+        } else {
+            const attendanceData = {
+                date: todayAttendance.date,
+                present: todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].present,
+                type_attendance: todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].type_attendance,
+                punches: todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches,
+            };
+            employee.attendances.push(attendanceData);
+        }
+
+        await employee.save();
+
+        return res.status(StatusCodes.OK).json({
+            status: StatusCodes.OK,
+            success: true,
+            message: `Employee performed a break-in successfully`,
+            date: currentDateIST
+        });
+    } catch (error) {
+        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
+    }
+};
+
+
+
+const breakOut = async (req, res, next) => {
+    try {
+        const employeeId = req.params.id;
+        const note = req.body.note;
+
+        let employee = await Employee.findById(employeeId);
+        if (!employee) {
+            return next(new ErrorHandler(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
+        }
+
+        const currentDateIST = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+        const currentDate = new Date(currentDateIST).setHours(0, 0, 0, 0);
+
+        let todayAttendance = await Attendance.findOne({
+            date: currentDate,
+            "attendanceDetails.employeeId": employee._id,
+        });
+
+        if (!todayAttendance) {
+            return next(new ErrorHandler(`Employee has not punched-in today`, StatusCodes.BAD_REQUEST));
+        }
+
+        const breakInIndex = todayAttendance.attendanceDetails.findIndex(
+            (detail) => detail.employeeId.equals(employee._id) && detail.type_attendance === "breakIn"
+        );
+
+        if (breakInIndex === -1) {
+            return res.status(StatusCodes.OK).json({
+                status: StatusCodes.OK,
+                success: false,
+                message: `Cannot perform break-out. Employee has not taken a break today.`,
+            });
+        }
+
+        const punchOutDetails = {
+            type: "breakOut",
+            punch_time: new Date(),
+            note: note,
+        };
+
+        todayAttendance.attendanceDetails[breakInIndex].punches.push(punchOutDetails);
+        await todayAttendance.save();
+
+        // Update the Employee model's attendances array
+        const attendanceData = {
+            date: todayAttendance.date,
+            present: todayAttendance.attendanceDetails[breakInIndex].present,
+            punches: todayAttendance.attendanceDetails[breakInIndex].punches,
+        };
+
+        const existingAttendanceIndex = employee.attendances.findIndex(
+            (attendance) => attendance.date.toISOString() === todayAttendance.date.toISOString()
+        );
+
+        if (existingAttendanceIndex !== -1) {
+            employee.attendances[existingAttendanceIndex] = attendanceData;
+        } else {
+            employee.attendances.push(attendanceData);
+        }
+
+        await employee.save();
+
+        return res.status(StatusCodes.OK).json({
+            status: StatusCodes.OK,
+            success: true,
+            message: `Employee broke out successfully`,
+            date: currentDateIST
+        });
+    } catch (error) {
+        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
+    }
+};
+
+
 const addPunchForHoliday = async (date) => {
     try {
         const employees = await Employee.find();
@@ -228,7 +384,7 @@ const addPunchForHoliday = async (date) => {
     }
 };
 
-const addLeaveAttendance = async (employeeId, fromDate, toDate, type, one_day_leave_type, from_time, to_time) => {
+const addLeaveAttendance = async (employeeId, fromDate, toDate, type, one_day_leave_type) => {
     try {
         const employee = await Employee.findById(employeeId);
 
@@ -317,16 +473,11 @@ const addLeaveAttendance = async (employeeId, fromDate, toDate, type, one_day_le
     }
 };
 
-const addPunchWeekend = async (date) => {
-    const currentDateIST = new Date(date).toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
-
-    console.error("Error adding weekend punch:", currentDateIST);
-};
-
 module.exports = {
     punchIn,
     punchOut,
     addPunchForHoliday,
     addLeaveAttendance,
-    addPunchWeekend
+    breakIn,
+    breakOut,
 };

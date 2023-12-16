@@ -7,7 +7,7 @@ const Attendance = require("../models/attendanceModel");
 
 const applyLeave = async (req, res, next) => {
     try {
-        const { employeeId, fromDate, toDate, type, comments, from_time, to_time, reason, one_day_leave_type } = req.body;
+        const { employeeId, fromDate, toDate, type, comments, reason, one_day_leave_type } = req.body;
 
         const today = new Date().setHours(0, 0, 0, 0);
         const selectedFromDate = new Date(fromDate);
@@ -19,13 +19,9 @@ const applyLeave = async (req, res, next) => {
         let selectedToDate = null;
         let hours = 0;
         let one_day_leave_type1 = one_day_leave_type;
-        let formattedFromTime = from_time;
-        let formattedToTime = to_time;
 
         if (type === 'More Then One Day') {
             one_day_leave_type1 = ""
-            formattedFromTime = ""
-            formattedToTime = '';
             selectedToDate = new Date(toDate);
 
             if (selectedToDate < today || selectedToDate < selectedFromDate) {
@@ -33,31 +29,14 @@ const applyLeave = async (req, res, next) => {
             }
         }
 
-        if (one_day_leave_type1 === 'hourly' && (!from_time || !to_time)) {
-            return next(new ErrorHandler('From-time and To-time are required for hourly leave', StatusCodes.BAD_REQUEST));
-        }
-
-        if (one_day_leave_type1 === 'hourly') {
-            selectedToDate = selectedFromDate;
-        }
-
         if (one_day_leave_type1 === 'Full Day') {
             selectedToDate = selectedFromDate;
             hours = 8;
-            formattedFromTime = ""
-            formattedToTime = '';
         }
 
         if (one_day_leave_type1 === 'Pre Lunch half day' || one_day_leave_type1 === 'Post lunch Half day') {
             selectedToDate = selectedFromDate;
             hours = 4;
-            if (one_day_leave_type1 === 'Pre Lunch half day') {
-                formattedFromTime = '09:00 AM';
-                formattedToTime = '13:00 PM';
-            } else if (one_day_leave_type1 === 'Post lunch Half day') {
-                formattedFromTime = '13:45 PM';
-                formattedToTime = '18:30 PM';
-            }
         }
 
         const overlappingLeave = await Leaves.findOne({
@@ -75,7 +54,9 @@ const applyLeave = async (req, res, next) => {
         });
 
         if (overlappingLeave) {
-            return next(new ErrorHandler('Leave already exists for the specified date range', StatusCodes.BAD_REQUEST));
+            if (overlappingLeave.status === 'Pending' || overlappingLeave.status === 'Approved') {
+                return next(new ErrorHandler('Leave already exists for the specified date range', StatusCodes.BAD_REQUEST));
+            }
         }
 
         const leaveApplication = new Leaves({
@@ -83,8 +64,6 @@ const applyLeave = async (req, res, next) => {
             fromDate: selectedFromDate,
             toDate: selectedToDate,
             type,
-            from_time: formattedFromTime,
-            to_time: formattedToTime,
             hours,
             one_day_leave_type: one_day_leave_type1,
             reason,
@@ -128,7 +107,7 @@ const updateLeaveStatus = async (req, res, next) => {
         }
 
         if (newStatus === 'Approved' && leave.status !== 'Approved') {
-            await addLeaveAttendance(leave.employeeId, leave.fromDate, leave.toDate, leave.type, leave.one_day_leave_type, leave.from_time, leave.to_time);
+            await addLeaveAttendance(leave.employeeId, leave.fromDate, leave.toDate, leave.type, leave.one_day_leave_type);
         } else if (newStatus === 'Approved' && leave.status === 'Approved') {
             return res.status(StatusCodes.OK).json({
                 status: StatusCodes.OK,
