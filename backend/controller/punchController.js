@@ -211,12 +211,6 @@ const breakIn = async (req, res, next) => {
             note: note,
         };
 
-        const punchOutDetails = {
-            type: "breakOut",
-            punch_time: new Date(),
-            note: note,
-        };
-
         todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches.push(punchInDetails);
 
         await todayAttendance.save();
@@ -272,9 +266,9 @@ const breakOut = async (req, res, next) => {
             return next(new ErrorHandler(`Employee has not punched-in today`, StatusCodes.BAD_REQUEST));
         }
 
-        const breakInIndex = todayAttendance.attendanceDetails.findIndex(
-            (detail) => detail.employeeId.equals(employee._id) && detail.type_attendance === "breakIn"
-        );
+        // const breakInIndex = todayAttendance.attendanceDetails.findIndex(
+        //     (detail) => detail.employeeId.equals(employee._id) && detail.type_attendance === "breakIn"
+        // );
 
         if (breakInIndex === -1) {
             return res.status(StatusCodes.OK).json({
