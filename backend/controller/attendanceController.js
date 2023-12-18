@@ -58,14 +58,13 @@ const getAttendanceDetails = async (req, res, next) => {
                         }
                     }
                     attendanceDetail.checkInTime = firstPunch ? firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' }) : new Date("00:00");
+
                     if (!excludeLastPunchInTime) {
                         const totalHours = (lastPunchOut - firstPunch) / (1000 * 60 * 60);
 
                         if (!isNaN(totalHours) && isFinite(totalHours)) {
                             attendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHours);
-                            if (totalHours > 5) {
-                                attendanceDetail.hoursWithbreak = formatTotalWorkingHours(totalHours - 1);
-                            }
+                            attendanceDetail.hoursWithbreak = formatTotalWorkingHours(totalHours - 1);
                             if (totalHours > 8) {
                                 const overtimeMinutes = Math.max(0, totalHours - 8 - 1) * 60;
                                 attendanceDetail.overtime = formatTotalWorkingHours(overtimeMinutes / 60);
