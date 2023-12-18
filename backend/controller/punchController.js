@@ -259,19 +259,31 @@ const breakOut = async (req, res, next) => {
 
         let todayAttendance = await Attendance.findOne({
             date: currentDate,
-            "attendanceDetails.employeeId": employee._id,
+            "attendanceDetails.employeeId": employeeId,
         });
 
         if (!todayAttendance) {
             return next(new ErrorHandler(`Employee has not punched-in today`, StatusCodes.BAD_REQUEST));
         }
+
         const employeeAttendanceDetailsIndex = todayAttendance.attendanceDetails.findIndex(
-            (detail) => detail.employeeId.equals(employee._id)
+            (detail) => detail.employeeId.equals(employeeId)
         );
 
-        const breakInIndex = todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches.some(punch => punch.type === "breakIn")
+        if (employeeAttendanceDetailsIndex === -1) {
+            return res.status(StatusCodes.OK).json({
+                status: StatusCodes.OK,
+                success: false,
+                message: `Cannot perform break-out. Employee has not punched-in today.`,
+            });
+        }
 
-        if (breakInIndex === -1) {
+        // Check if the employee has taken a break today
+        const hasBreakIn = todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches.some(
+            (punch) => punch.type === "breakIn"
+        );
+
+        if (!hasBreakIn) {
             return res.status(StatusCodes.OK).json({
                 status: StatusCodes.OK,
                 success: false,
@@ -279,18 +291,34 @@ const breakOut = async (req, res, next) => {
             });
         }
 
+        // Find the index of the last "breakIn" punch
+        const lastBreakInIndex = todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches
+            .slice()
+            .reverse()
+            .findIndex((punch) => punch.type === "breakIn");
+
+        // Check if the last "breakIn" punch exists
+        if (lastBreakInIndex === -1) {
+            return res.status(StatusCodes.OK).json({
+                status: StatusCodes.OK,
+                success: false,
+                message: `Cannot perform break-out. No break-in punch found for the employee today.`,
+            });
+        }
+
+        // Push new data into the punches array
         const punchOutDetails = {
             type: "breakOut",
             punch_time: new Date(),
             note: note,
         };
 
-        todayAttendance.attendanceDetails[breakInIndex].punches.push(punchOutDetails);
+        todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches.push(punchOutDetails);
         await todayAttendance.save();
 
         // Update the Employee model's attendances array
         const attendanceData = {
-            punches: todayAttendance.attendanceDetails[breakInIndex].punches,
+            punches: todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches,
         };
 
         const existingAttendanceIndex = employee.attendances.findIndex(
@@ -298,9 +326,21 @@ const breakOut = async (req, res, next) => {
         );
 
         if (existingAttendanceIndex !== -1) {
-            employee.attendances[existingAttendanceIndex] = attendanceData;
+            // If the existing attendance is found, update it
+            const existingAttendance = employee.attendances[existingAttendanceIndex];
+            existingAttendance.type_attendance = "present";  // Update with the necessary fields based on your schema
+            existingAttendance.present = 1;  // Update with the necessary fields based on your schema
+
+            // Push new data into the punches array
+            existingAttendance.punches.push(punchOutDetails);
         } else {
-            employee.attendances.push(attendanceData);
+            // If the existing attendance is not found, push a new attendance object
+            employee.attendances.push({
+                type_attendance: "present",  // Add the necessary fields based on your schema
+                present: 1,  // Add the necessary fields based on your schema
+                date: todayAttendance.date,  // Make sure to include the date
+                punches: [punchOutDetails],
+            });
         }
 
         await employee.save();
@@ -309,12 +349,13 @@ const breakOut = async (req, res, next) => {
             status: StatusCodes.OK,
             success: true,
             message: `Employee broke out successfully`,
-            date: currentDateIST
+            date: currentDateIST,
         });
     } catch (error) {
         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
+
 
 
 const addPunchForHoliday = async (date) => {
