@@ -19,7 +19,7 @@ const getAttendanceDetails = async (req, res, next) => {
         let totalAbsentDays = 0;
         let totalPresentDays = 0;
         let totalHolidayDays = 0;
-        let totalHours = 0;
+        let totalofHours = 0;
 
         employee.attendances.forEach(attendanceRecord => {
             const date = attendanceRecord.date.toISOString().split('T')[0];
@@ -66,7 +66,7 @@ const getAttendanceDetails = async (req, res, next) => {
                         if (!isNaN(totalHours) && isFinite(totalHours)) {
                             attendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHours);
                             attendanceDetail.hoursWithbreak = formatTotalWorkingHours(totalHours - 1);
-                            totalHours += formatTotalWorkingHours(totalHours - 1);
+                            totalofHours += formatTotalWorkingHours(totalHours - 1);
                             if (totalHours > 8) {
                                 const overtimeMinutes = Math.max(0, totalHours - 8 - 1) * 60;
                                 attendanceDetail.overtime = formatTotalWorkingHours(overtimeMinutes / 60);
@@ -112,7 +112,7 @@ const getAttendanceDetails = async (req, res, next) => {
                 totalAbsentDays,
                 totalPresentDays,
                 totalHolidayDays,
-                totalHours: totalHours,
+                totalHours: totalofHours,
                 attendessdetail: monthlyAttendanceDetails,
             },
         });
