@@ -265,7 +265,9 @@ const breakOut = async (req, res, next) => {
         if (!todayAttendance) {
             return next(new ErrorHandler(`Employee has not punched-in today`, StatusCodes.BAD_REQUEST));
         }
-
+        const employeeAttendanceDetailsIndex = todayAttendance.attendanceDetails.findIndex(
+            (detail) => detail.employeeId.equals(employee._id)
+        );
 
         const breakInIndex = todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches.some(punch => punch.type === "breakIn")
 
