@@ -61,18 +61,17 @@ const getAttendanceDetails = async (req, res, next) => {
                     attendanceDetail.checkInTime = firstPunch ? firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' }) : new Date("00:00");
 
                     if (!excludeLastPunchInTime) {
-                        const totalHoursOfDay = (lastPunchOut - firstPunch) / (1000 * 60 * 60);
+                        const totalHours = (lastPunchOut - firstPunch) / (1000 * 60 * 60);
 
                         if (!isNaN(totalHours) && isFinite(totalHours)) {
-                            const hoursWithBreak = totalHoursOfDay - 1;
-                            attendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHoursOfDay);
-                            attendanceDetail.hoursWithbreak = formatTotalWorkingHours(hoursWithBreak);
-                            totalHours += hoursWithBreak;
-                            if (totalHoursOfDay > 8) {
-                                const overtimeMinutes = Math.max(0, totalHoursOfDay - 8 - 1) * 60;
+                            attendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHours);
+                            attendanceDetail.hoursWithbreak = formatTotalWorkingHours(totalHours - 1);
+                            totalHours += attendanceDetail.hoursWithbreak;
+                            if (totalHours > 8) {
+                                const overtimeMinutes = Math.max(0, totalHours - 8 - 1) * 60;
                                 attendanceDetail.overtime = formatTotalWorkingHours(overtimeMinutes / 60);
                             } else {
-                                attendanceDetail.overtime = '00h:00m';
+                                attendanceDetail.overtime = "00h:00m";
                             }
                         } else {
                             attendanceDetail.totalWorkingHours = new Date("00:00");
@@ -113,7 +112,7 @@ const getAttendanceDetails = async (req, res, next) => {
                 totalAbsentDays,
                 totalPresentDays,
                 totalHolidayDays,
-                totalHours,
+                totalHours: formatTotalWorkingHours(totalHours),
                 attendessdetail: monthlyAttendanceDetails,
             },
         });
