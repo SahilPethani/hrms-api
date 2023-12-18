@@ -67,10 +67,11 @@ const getAttendanceDetails = async (req, res, next) => {
                             attendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHours);
                             if (totalHours < 1) {
                                 attendanceDetail.hoursWithbreak = formatTotalWorkingHours(totalHours);
+                                totalofHours += totalHours;
                             } else {
                                 attendanceDetail.hoursWithbreak = formatTotalWorkingHours(totalHours - 1);
+                                totalofHours += totalHours - 1;
                             }
-                            totalofHours += totalHours - 1;
                             if (totalHours > 8) {
                                 const overtimeMinutes = Math.max(0, totalHours - 8 - 1) * 60;
                                 attendanceDetail.overtime = formatTotalWorkingHours(overtimeMinutes / 60);
