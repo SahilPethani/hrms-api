@@ -19,6 +19,7 @@ const getAttendanceDetails = async (req, res, next) => {
         let totalAbsentDays = 0;
         let totalPresentDays = 0;
         let totalHolidayDays = 0;
+        let totalHours = 0;
 
         employee.attendances.forEach(attendanceRecord => {
             const date = attendanceRecord.date.toISOString().split('T')[0];
@@ -60,16 +61,18 @@ const getAttendanceDetails = async (req, res, next) => {
                     attendanceDetail.checkInTime = firstPunch ? firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' }) : new Date("00:00");
 
                     if (!excludeLastPunchInTime) {
-                        const totalHours = (lastPunchOut - firstPunch) / (1000 * 60 * 60);
+                        const totalHoursOfDay = (lastPunchOut - firstPunch) / (1000 * 60 * 60);
 
                         if (!isNaN(totalHours) && isFinite(totalHours)) {
-                            attendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHours);
-                            attendanceDetail.hoursWithbreak = formatTotalWorkingHours(totalHours - 1);
-                            if (totalHours > 8) {
-                                const overtimeMinutes = Math.max(0, totalHours - 8 - 1) * 60;
+                            const hoursWithBreak = totalHoursOfDay - 1;
+                            attendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHoursOfDay);
+                            attendanceDetail.hoursWithbreak = formatTotalWorkingHours(hoursWithBreak);
+                            totalHours += hoursWithBreak;
+                            if (totalHoursOfDay > 8) {
+                                const overtimeMinutes = Math.max(0, totalHoursOfDay - 8 - 1) * 60;
                                 attendanceDetail.overtime = formatTotalWorkingHours(overtimeMinutes / 60);
                             } else {
-                                attendanceDetail.overtime = "00h:00m";
+                                attendanceDetail.overtime = '00h:00m';
                             }
                         } else {
                             attendanceDetail.totalWorkingHours = new Date("00:00");
@@ -110,6 +113,7 @@ const getAttendanceDetails = async (req, res, next) => {
                 totalAbsentDays,
                 totalPresentDays,
                 totalHolidayDays,
+                totalHours,
                 attendessdetail: monthlyAttendanceDetails,
             },
         });
