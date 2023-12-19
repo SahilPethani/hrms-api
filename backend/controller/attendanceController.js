@@ -2,7 +2,7 @@ const { StatusCodes } = require("http-status-codes");
 const ErrorHandler = require("../middleware/errorhander");
 const Employee = require("../models/employeeModel");
 const Attendance = require("../models/attendanceModel");
-const { getDayName, formatTotalWorkingHours, formatBreakTime } = require("../utils/helper");
+const { getDayName, formatTotalWorkingHours } = require("../utils/helper");
 const Holiday = require("../models/holidayModel");
 const moment = require('moment');
 
@@ -65,7 +65,7 @@ const getAttendanceDetails = async (req, res, next) => {
 
                         if (!isNaN(totalHours) && isFinite(totalHours)) {
                             attendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHours);
-                            if (totalHours < 1) {
+                            if (totalHours < 4) {
                                 attendanceDetail.hoursWithbreak = formatTotalWorkingHours(totalHours);
                                 totalofHours += totalHours;
                             } else {
@@ -357,7 +357,11 @@ const getTodayAttendance = async (req, res, next) => {
 
                         if (!isNaN(totalHours) && isFinite(totalHours)) {
                             employeeAttendance.totalWorkingHours = formatTotalWorkingHours(totalHours);
-                            employeeAttendance.hoursWithbreak = formatTotalWorkingHours(totalHours - 1);
+                            if (totalHours < 4) {
+                                employeeAttendance.hoursWithbreak = formatTotalWorkingHours(totalHours);
+                            } else {
+                                employeeAttendance.hoursWithbreak = formatTotalWorkingHours(totalHours - 1);
+                            }
                             if (totalHours > 8) {
                                 const overtimeMinutes = Math.max(0, totalHours - 8 - 1) * 60;
                                 employeeAttendance.overtime = formatTotalWorkingHours(overtimeMinutes / 60);
@@ -448,7 +452,11 @@ const getEmployeePunchesToday = async (req, res, next) => {
 
                     if (!isNaN(totalHours) && isFinite(totalHours)) {
                         totalWorkingHours = formatTotalWorkingHours(totalHours);
-                        hoursWithbreak = formatTotalWorkingHours(totalHours - 1);
+                        if (totalHours < 4) {
+                            hoursWithbreak = formatTotalWorkingHours(totalHours);
+                        } else {
+                            hoursWithbreak = formatTotalWorkingHours(totalHours - 1);
+                        }
                         if (totalHours > 8) {
                             const overtimeMinutes = Math.max(0, totalHours - 8 - 1) * 60;
                             overtime = formatTotalWorkingHours(overtimeMinutes / 60);
@@ -562,7 +570,11 @@ const getEmployeeAttendanceDetails = async (req, res, next) => {
 
                     if (!isNaN(totalHours) && isFinite(totalHours)) {
                         AttendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHours);
-                        AttendanceDetail.hoursWithbreak = formatTotalWorkingHours(totalHours - 1);
+                        if (totalHours < 4) {
+                            AttendanceDetail.hoursWithbreak = formatTotalWorkingHours(totalHours);
+                        } else {
+                            AttendanceDetail.hoursWithbreak = formatTotalWorkingHours(totalHours - 1);
+                        }
                         if (totalHours > 8) {
                             const overtimeMinutes = Math.max(0, totalHours - 8 - 1) * 60;
                             AttendanceDetail.overtime = formatTotalWorkingHours(overtimeMinutes / 60);
@@ -671,7 +683,11 @@ const getEmployeeAttendanceList = async (req, res, next) => {
 
                         if (!isNaN(totalHours) && isFinite(totalHours)) {
                             attendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHours);
-                            attendanceDetail.hoursWithbreak = formatTotalWorkingHours(totalHours - 1);
+                            if (totalHours < 4) {
+                                attendanceDetail.hoursWithbreak = formatTotalWorkingHours(totalHours);
+                            } else {
+                                attendanceDetail.hoursWithbreak = formatTotalWorkingHours(totalHours - 1);
+                            }
                             if (totalHours > 8) {
                                 const overtimeMinutes = Math.max(0, totalHours - 8 - 1) * 60;
                                 attendanceDetail.overtime = formatTotalWorkingHours(overtimeMinutes / 60);

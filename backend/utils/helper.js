@@ -24,21 +24,6 @@ const calculateWorkingHours = (punches) => {
     return workingHours;
 };
 
-
-const calculateOvertime = (workingHours) => {
-    const standardWorkingHours = 8;
-    const overtime = Math.max(workingHours - standardWorkingHours, 0);
-
-    return overtime;
-};
-
-const calculateProductivity = (workingHours) => {
-    const standardWorkingHours = 8;
-    const productivity = Math.min(workingHours / standardWorkingHours, 1);
-
-    return productivity;
-};
-
 const getDayName = (dayIndex) => {
     const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     return daysOfWeek[dayIndex];
@@ -54,35 +39,15 @@ const formatTotalWorkingHours = (totalHours) => {
     return `${formattedHours}h:${formattedMinutes}m`;
 };
 
-const formatMinutesToTime = (minutes) => {
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-
-    const formattedHours = hours.toString().padStart(2, '0');
-    const formattedMinutes = remainingMinutes.toString().padStart(2, '0');
-
-    return `${formattedHours}h:${formattedMinutes}m`;
-};
-
-
-const formatBreakTime = (breakTimeInMinutes) => {
-    const hours = Math.floor(breakTimeInMinutes / 60);
-    const minutes = Math.floor(breakTimeInMinutes % 60);
-    
-    const formattedHours = hours < 10 ? `0${hours}` : hours;
-    const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
-
-    return `${formattedHours}:${formattedMinutes} hrs`;
-};
+function isDuringTimeRange(date, startTime, endTime) {
+    const currentTime = new Date(date).toLocaleTimeString('en-US', { hour12: false });
+    return currentTime >= startTime && currentTime <= endTime;
+}
 
 module.exports = {
     generateUniqueUserId,
     calculateWorkingHours,
-    calculateOvertime,
-    calculateProductivity,
-    calculateWorkingHours,
     getDayName,
     formatTotalWorkingHours,
-    formatMinutesToTime,
-    formatBreakTime
+    isDuringTimeRange
 };

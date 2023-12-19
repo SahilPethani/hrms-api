@@ -3,6 +3,8 @@ const ErrorHandler = require("../middleware/errorhander");
 const Employee = require("../models/employeeModel");
 const Attendance = require("../models/attendanceModel");
 const Holiday = require("../models/holidayModel");
+const Leaves = require("../models/leavesModel");
+const { isDuringTimeRange } = require("../utils/helper");
 
 const punchIn = async (req, res, next) => {
     try {
@@ -25,6 +27,49 @@ const punchIn = async (req, res, next) => {
                 message: `It's a holiday. Employees don't need to punch in.`,
             });
         }
+
+        const onLeave = await Leaves.exists({
+            employeeId: employee._id,
+            fromDate: { $lte: currentDate },
+            toDate: { $gte: currentDate },
+            status: 'Approved', // Assuming only approved leaves are considered
+        });
+
+
+        if (onLeave) {
+            const leaveDetails = await Leaves.findOne({
+                employeeId: employee._id,
+                fromDate: { $lte: currentDate },
+                toDate: { $gte: currentDate },
+                status: 'Approved',
+            });
+
+            if (leaveDetails.one_day_leave_type === 'Full Day') {
+                return res.status(StatusCodes.OK).json({
+                    status: StatusCodes.OK,
+                    success: false,
+                    message: `Full day leave. Punch-in not allowed for the entire day.`,
+                });
+            }
+
+            // Check for specific half-day leave types
+            if (leaveDetails.one_day_leave_type === 'Pre Lunch half day' && isDuringTimeRange(currentDate, '09:00', '13:45')) {
+                return res.status(StatusCodes.OK).json({
+                    status: StatusCodes.OK,
+                    success: false,
+                    message: `Pre Lunch half day leave. Punch-in not allowed during 9:00 AM to 1:45 PM.`,
+                });
+            }
+
+            if (leaveDetails.one_day_leave_type === 'Post lunch Half day' && isDuringTimeRange(currentDate, '13:45', '18:30')) {
+                return res.status(StatusCodes.OK).json({
+                    status: StatusCodes.OK,
+                    success: false,
+                    message: `Post Lunch half day leave. Punch-in not allowed during 1:45 PM to 6:30 PM.`,
+                });
+            }
+        }
+
 
         let todayAttendance = await Attendance.findOne({
             date: currentDate,
@@ -241,8 +286,6 @@ const breakIn = async (req, res, next) => {
         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
-
-
 
 const breakOut = async (req, res, next) => {
     try {
