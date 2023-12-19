@@ -372,7 +372,7 @@ const getTodayAttendance = async (req, res, next) => {
 
                     employeeAttendance.checkInTime = firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
 
-                    if (!excludeLastPunchInTime) {
+                    if (lastPunch.type === "punchOut") {
                         const totalHours = (new Date(lastPunch?.punch_time) - firstPunch) / (1000 * 60 * 60);
 
                         if (!isNaN(totalHours) && isFinite(totalHours)) {
