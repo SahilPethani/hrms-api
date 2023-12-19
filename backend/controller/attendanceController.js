@@ -337,13 +337,34 @@ const getTodayAttendance = async (req, res, next) => {
                 );
 
                 if (employeeDetails.punches.length > 0) {
+                    // const firstPunch = new Date(employeeDetails.punches[0]?.punch_time);
+                    // const punchOuts = employeeDetails.punches.filter(punch => punch.type === 'punchOut');
+
+                    // const lastPunchOut = punchOuts.length > 0 ? new Date(punchOuts[punchOuts.length - 1].punch_time) : new Date("00:00");
+
+                    // const lastPunchType = employeeDetails.punches[employeeDetails.punches.length - 1].type;
+                    // const excludeLastPunchInTime = lastPunchType === 'punchIn';
+
+                    // if (lastPunchOut instanceof Date && !isNaN(lastPunchOut?.getTime())) {
+                    //     employeeAttendance.checkOutTime = lastPunchOut.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
+                    // } else {
+                    //     employeeAttendance.checkOutTime = '00:00';
+                    // }
+
                     const firstPunch = new Date(employeeDetails.punches[0]?.punch_time);
-                    const punchOuts = employeeDetails.punches.filter(punch => punch.type === 'punchOut');
-
+                    const punchOuts = employeeDetails.punches.filter(punch => punch?.type === 'punchOut');
                     const lastPunchOut = punchOuts.length > 0 ? new Date(punchOuts[punchOuts.length - 1].punch_time) : new Date("00:00");
-
                     const lastPunchType = employeeDetails.punches[employeeDetails.punches.length - 1].type;
                     const excludeLastPunchInTime = lastPunchType === 'punchIn';
+
+                    if (!excludeLastPunchInTime) {
+                        if (lastPunchOut instanceof Date && !isNaN(lastPunchOut?.getTime())) {
+                            employeeAttendance.checkOutTime = lastPunchOut.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
+                        } else {
+                            employeeAttendance.checkOutTime = '00:00';
+                        }
+                    }
+
 
                     let breakStartTime = null;
                     let totalBreakTimeMinutes = 0;
@@ -359,11 +380,6 @@ const getTodayAttendance = async (req, res, next) => {
                         }
                     }
 
-                    if (lastPunchOut instanceof Date && !isNaN(lastPunchOut?.getTime())) {
-                        employeeAttendance.checkOutTime = lastPunchOut.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
-                    } else {
-                        employeeAttendance.checkOutTime = '00:00';
-                    }
                     employeeAttendance.checkInTime = firstPunch.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
 
                     if (!excludeLastPunchInTime) {
