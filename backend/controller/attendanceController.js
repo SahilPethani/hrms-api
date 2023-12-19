@@ -323,6 +323,7 @@ const getTodayAttendance = async (req, res, next) => {
                 hoursWithbreak: '00:00',
                 overtime: '00:00',
                 totalWorkingHours: '00:00',
+                totalBreakTime: '00:00',
                 present: false,
             };
 
@@ -344,6 +345,19 @@ const getTodayAttendance = async (req, res, next) => {
                     const lastPunchType = employeeDetails.punches[employeeDetails.punches.length - 1].type;
                     const excludeLastPunchInTime = lastPunchType === 'punchIn';
 
+                    let breakStartTime = null;
+                    let totalBreakTimeMinutes = 0;
+
+                    for (const punch of employeeDetails.punches) {
+                        if (punch.type === 'breakIn') {
+                            breakStartTime = new Date(punch.punch_time);
+                        } else if (punch.type === 'breakOut' && breakStartTime) {
+                            const breakEndTime = new Date(punch.punch_time);
+                            const breakDurationMinutes = (breakEndTime - breakStartTime) / (1000 * 60);
+                            totalBreakTimeMinutes += breakDurationMinutes;
+                            breakStartTime = null;
+                        }
+                    }
 
                     if (lastPunchOut instanceof Date && !isNaN(lastPunchOut?.getTime())) {
                         employeeAttendance.checkOutTime = lastPunchOut.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' });
@@ -372,6 +386,7 @@ const getTodayAttendance = async (req, res, next) => {
                             employeeAttendance.totalWorkingHours = new Date("00:00");
                         }
                     }
+                    employeeAttendance.totalBreakTime = formatTotalWorkingHours(totalBreakTimeMinutes / 60); // Add total break time to employeeAttendance
 
                     employeeAttendance.present = true;
                 }
