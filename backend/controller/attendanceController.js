@@ -65,7 +65,7 @@ const getAttendanceDetails = async (req, res, next) => {
 
                         if (!isNaN(totalHours) && isFinite(totalHours)) {
                             attendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHours);
-                            if (totalHours < 4) {
+                            if (totalHours < 5) {
                                 attendanceDetail.hoursWithbreak = formatTotalWorkingHours(totalHours);
                                 totalofHours += totalHours;
                             } else {
@@ -357,7 +357,7 @@ const getTodayAttendance = async (req, res, next) => {
 
                         if (!isNaN(totalHours) && isFinite(totalHours)) {
                             employeeAttendance.totalWorkingHours = formatTotalWorkingHours(totalHours);
-                            if (totalHours < 4) {
+                            if (totalHours < 5) {
                                 employeeAttendance.hoursWithbreak = formatTotalWorkingHours(totalHours);
                             } else {
                                 employeeAttendance.hoursWithbreak = formatTotalWorkingHours(totalHours - 1);
@@ -452,7 +452,7 @@ const getEmployeePunchesToday = async (req, res, next) => {
 
                     if (!isNaN(totalHours) && isFinite(totalHours)) {
                         totalWorkingHours = formatTotalWorkingHours(totalHours);
-                        if (totalHours < 4) {
+                        if (totalHours < 5) {
                             hoursWithbreak = formatTotalWorkingHours(totalHours);
                         } else {
                             hoursWithbreak = formatTotalWorkingHours(totalHours - 1);
@@ -570,7 +570,7 @@ const getEmployeeAttendanceDetails = async (req, res, next) => {
 
                     if (!isNaN(totalHours) && isFinite(totalHours)) {
                         AttendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHours);
-                        if (totalHours < 4) {
+                        if (totalHours < 5) {
                             AttendanceDetail.hoursWithbreak = formatTotalWorkingHours(totalHours);
                         } else {
                             AttendanceDetail.hoursWithbreak = formatTotalWorkingHours(totalHours - 1);
@@ -683,7 +683,7 @@ const getEmployeeAttendanceList = async (req, res, next) => {
 
                         if (!isNaN(totalHours) && isFinite(totalHours)) {
                             attendanceDetail.totalWorkingHours = formatTotalWorkingHours(totalHours);
-                            if (totalHours < 4) {
+                            if (totalHours < 5) {
                                 attendanceDetail.hoursWithbreak = formatTotalWorkingHours(totalHours);
                             } else {
                                 attendanceDetail.hoursWithbreak = formatTotalWorkingHours(totalHours - 1);
