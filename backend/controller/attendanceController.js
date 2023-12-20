@@ -141,8 +141,10 @@ const getAttendanceDetails = async (req, res, next) => {
 
 const getEmployeeAttendanceSummary = async (req, res, next) => {
     try {
-        const requestedDate = req.query.date || new Date().toISOString().split('T')[0];
-        const currentDate = new Date(requestedDate).setHours(0, 0, 0, 0);
+        const requestedDate = req.query.date || new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+
+        const currentDateIST = new Date(requestedDate).toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+        const currentDate = new Date(currentDateIST).setHours(0, 0, 0, 0);
 
         const presentEmployees = await Attendance.find({
             date: currentDate,
@@ -174,7 +176,7 @@ const getEmployeeAttendanceSummary = async (req, res, next) => {
         });
 
         const absentEmployeesData = absentEmployees.map(employee => ({
-            date: requestedDate,
+            date: currentDateIST,
             employee: {
                 _id: employee._id,
                 firstName: employee.first_name,
