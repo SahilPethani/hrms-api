@@ -153,7 +153,7 @@ const getEmployeeAttendanceSummary = async (req, res, next) => {
         const absentEmployees = await Employee.find({
             _id: {
                 $nin: presentEmployees.flatMap(employeeAttendance => {
-                    return employeeAttendance.attendanceDetails.map(detail => !detail.employeeId._id);
+                    return employeeAttendance.attendanceDetails.map(detail => detail.employeeId._id);
                 })
             },
         });
