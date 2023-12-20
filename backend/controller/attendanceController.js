@@ -151,53 +151,53 @@ const getEmployeeAttendanceSummary = async (req, res, next) => {
             "attendanceDetails.type_attendance": "present",
         }).populate('attendanceDetails.employeeId', 'first_name last_name user_id designation mobile avatar');
 
-        const absentEmployees = await Employee.find({
-            _id: {
-                $nin: presentEmployees.flatMap(employeeAttendance => {
-                    return employeeAttendance.attendanceDetails.map(detail => detail.employeeId._id);
-                })
-            },
-        });
+        // const absentEmployees = await Employee.find({
+        //     _id: {
+        //         $nin: presentEmployees.flatMap(employeeAttendance => {
+        //             return employeeAttendance.attendanceDetails.map(detail => detail.employeeId._id);
+        //         })
+        //     },
+        // });
 
-        const presentEmployeesData = presentEmployees.flatMap(employeeAttendance => {
-            return employeeAttendance.attendanceDetails.map(detail => ({
-                date: employeeAttendance.date,
-                employee: {
-                    _id: detail.employeeId._id,
-                    firstName: detail.employeeId.first_name,
-                    lastName: detail.employeeId.last_name,
-                    userId: detail.employeeId.user_id,
-                    mobile: detail.employeeId.mobile,
-                    designation: detail.employeeId.designation,
-                    avatar: detail.employeeId.avatar
-                },
-                present: true,
-            }));
-        });
+        // const presentEmployeesData = presentEmployees.flatMap(employeeAttendance => {
+        //     return employeeAttendance.attendanceDetails.map(detail => ({
+        //         date: employeeAttendance.date,
+        //         employee: {
+        //             _id: detail.employeeId._id,
+        //             firstName: detail.employeeId.first_name,
+        //             lastName: detail.employeeId.last_name,
+        //             userId: detail.employeeId.user_id,
+        //             mobile: detail.employeeId.mobile,
+        //             designation: detail.employeeId.designation,
+        //             avatar: detail.employeeId.avatar
+        //         },
+        //         present: true,
+        //     }));
+        // });
 
-        const absentEmployeesData = absentEmployees.map(employee => ({
-            date: currentDateIST,
-            employee: {
-                _id: employee._id,
-                firstName: employee.first_name,
-                lastName: employee.last_name,
-                userId: employee.user_id,
-                mobile: employee.mobile,
-                designation: employee.designation,
-                avatar: employee.avatar
-            },
-            present: false,
-        }));
+        // const absentEmployeesData = absentEmployees.map(employee => ({
+        //     date: currentDateIST,
+        //     employee: {
+        //         _id: employee._id,
+        //         firstName: employee.first_name,
+        //         lastName: employee.last_name,
+        //         userId: employee.user_id,
+        //         mobile: employee.mobile,
+        //         designation: employee.designation,
+        //         avatar: employee.avatar
+        //     },
+        //     present: false,
+        // }));
 
-        const employeeAttendanceSummary = [...presentEmployeesData, ...absentEmployeesData];
+        // const employeeAttendanceSummary = [...presentEmployeesData, ...absentEmployeesData];
 
         return res.status(StatusCodes.OK).json({
             status: StatusCodes.OK,
             success: true,
             message: `Employee attendance summary retrieved successfully`,
             data: {
-                date: requestedDate,
-                employeeAttendanceSummary,
+                date: currentDateIST,
+                presentEmployees,
             },
         });
     } catch (error) {
