@@ -150,24 +150,18 @@ const punchOut = async (req, res, next) => {
             return next(new ErrorHandler(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
         }
         const currentDateIST = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
-        const currentDate = new Date(currentDateIST).setHours(0, 0, 0, 0);
+        const currentDate = new Date().setHours(0, 0, 0, 0);
+        const attendanceRecord = employee?.attendances.find((item, index) => new Date(item.date).setHours(0, 0, 0, 0) === currentDate)
 
         let todayAttendance = await Attendance.findOne({
-            date: currentDate,
+            date: attendanceRecord?.date,
             "attendanceDetails.employeeId": employee._id,
         });
-
 
         if (!todayAttendance) {
             return next(new ErrorHandler(`Employee has not punched-in today`, StatusCodes.BAD_REQUEST));
         }
-
-        const hasPunchIn = todayAttendance.attendanceDetails[0].punches.some(punch => punch.type === 'punchIn');
-
-        if (!hasPunchIn) {
-            return next(new ErrorHandler(`Employee has not punched-in today`, StatusCodes.BAD_REQUEST));
-        }
-
+     
         const punchOutDetails = {
             type: "punchOut",
             punch_time: new Date(),
@@ -177,6 +171,13 @@ const punchOut = async (req, res, next) => {
         const employeeAttendanceDetailsIndex = todayAttendance.attendanceDetails.findIndex(
             (detail) => detail.employeeId.equals(employee._id)
         );
+
+        const hasPunchIn = todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches.filter(punch => punch?.type === "punchIn" || punch?.type === "punchOut");
+        const lastPunch = hasPunchIn[hasPunchIn?.length - 1]
+
+        if (lastPunch?.type !== "punchIn") {
+            return next(new ErrorHandler(`Employee has not punched-in, to first Punch In`, StatusCodes.BAD_REQUEST));
+        }
 
         if (employeeAttendanceDetailsIndex !== -1) {
             todayAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches.push(punchOutDetails);
@@ -211,7 +212,6 @@ const punchOut = async (req, res, next) => {
         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
-
 const breakIn = async (req, res, next) => {
     try {
         const employeeId = req.params.id;

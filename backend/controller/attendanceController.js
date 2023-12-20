@@ -459,7 +459,6 @@ const getEmployeePunchesToday = async (req, res, next) => {
         if (FindAttendes) {
             if (FindAttendes.punches.length > 0) {
                 const firstPunch = new Date(FindAttendes.punches[0]?.punch_time);
-                const punchOuts = FindAttendes.punches.filter(punch => punch.type === 'punchOut');
                 const punchs = FindAttendes?.punches?.filter((punch) => punch?.type === "punchIn" || punch?.type === "punchOut");
                 const lastPunch = punchs[punchs?.length - 1]
 
