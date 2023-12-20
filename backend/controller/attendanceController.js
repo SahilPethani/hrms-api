@@ -150,13 +150,13 @@ const getEmployeeAttendanceSummary = async (req, res, next) => {
             date: currentDate
         }).populate('attendanceDetails.employeeId', 'first_name last_name user_id designation mobile avatar');
 
-        // const absentEmployees = await Employee.find({
-        //     _id: {
-        //         $nin: presentEmployees.flatMap(employeeAttendance => {
-        //             return employeeAttendance.attendanceDetails.map(detail => detail.employeeId._id);
-        //         })
-        //     },
-        // });
+        const absentEmployees = await Employee.find({
+            _id: {
+                $nin: presentEmployees.flatMap(employeeAttendance => {
+                    return employeeAttendance.attendanceDetails.map(detail => !detail.employeeId._id);
+                })
+            },
+        });
 
         const presentEmployeesData = presentEmployees.flatMap(employeeAttendance => {
             return employeeAttendance.attendanceDetails.map(detail => ({
@@ -174,21 +174,21 @@ const getEmployeeAttendanceSummary = async (req, res, next) => {
             }));
         });
 
-        // const absentEmployeesData = absentEmployees.map(employee => ({
-        //     date: currentDateIST,
-        //     employee: {
-        //         _id: employee._id,
-        //         firstName: employee.first_name,
-        //         lastName: employee.last_name,
-        //         userId: employee.user_id,
-        //         mobile: employee.mobile,
-        //         designation: employee.designation,
-        //         avatar: employee.avatar
-        //     },
-        //     present: false,
-        // }));
+        const absentEmployeesData = absentEmployees.map(employee => ({
+            date: currentDateIST,
+            employee: {
+                _id: employee._id,
+                firstName: employee.first_name,
+                lastName: employee.last_name,
+                userId: employee.user_id,
+                mobile: employee.mobile,
+                designation: employee.designation,
+                avatar: employee.avatar
+            },
+            present: false,
+        }));
 
-        const employeeAttendanceSummary = [...presentEmployeesData];
+        const employeeAttendanceSummary = [...presentEmployeesData, ...absentEmployeesData];
 
         return res.status(StatusCodes.OK).json({
             status: StatusCodes.OK,
