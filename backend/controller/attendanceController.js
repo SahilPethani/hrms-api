@@ -520,6 +520,8 @@ const getEmployeePunchesToday = async (req, res, next) => {
                     checkOutTime: checkOutTime,
                     totalWorkingHours: totalWorkingHours,
                     hoursWithbreak: hoursWithbreak,
+                    totalBreakTime: totalBreakTime,
+                    overtime: overtime,
                     today_activity: FindAttendes,
                 },
             });
