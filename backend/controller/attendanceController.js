@@ -147,8 +147,7 @@ const getEmployeeAttendanceSummary = async (req, res, next) => {
         const currentDate = new Date(currentDateIST).setHours(0, 0, 0, 0);
 
         const presentEmployees = await Attendance.find({
-            date: currentDate,
-            "attendanceDetails.type_attendance": "present",
+            date: currentDate
         }).populate('attendanceDetails.employeeId', 'first_name last_name user_id designation mobile avatar');
 
         // const absentEmployees = await Employee.find({
@@ -159,21 +158,21 @@ const getEmployeeAttendanceSummary = async (req, res, next) => {
         //     },
         // });
 
-        // const presentEmployeesData = presentEmployees.flatMap(employeeAttendance => {
-        //     return employeeAttendance.attendanceDetails.map(detail => ({
-        //         date: employeeAttendance.date,
-        //         employee: {
-        //             _id: detail.employeeId._id,
-        //             firstName: detail.employeeId.first_name,
-        //             lastName: detail.employeeId.last_name,
-        //             userId: detail.employeeId.user_id,
-        //             mobile: detail.employeeId.mobile,
-        //             designation: detail.employeeId.designation,
-        //             avatar: detail.employeeId.avatar
-        //         },
-        //         present: true,
-        //     }));
-        // });
+        const presentEmployeesData = presentEmployees.flatMap(employeeAttendance => {
+            return employeeAttendance.attendanceDetails.map(detail => ({
+                date: employeeAttendance.date,
+                employee: {
+                    _id: detail.employeeId._id,
+                    firstName: detail.employeeId.first_name,
+                    lastName: detail.employeeId.last_name,
+                    userId: detail.employeeId.user_id,
+                    mobile: detail.employeeId.mobile,
+                    designation: detail.employeeId.designation,
+                    avatar: detail.employeeId.avatar
+                },
+                present: detail.type_attendance === "present",
+            }));
+        });
 
         // const absentEmployeesData = absentEmployees.map(employee => ({
         //     date: currentDateIST,
@@ -189,15 +188,15 @@ const getEmployeeAttendanceSummary = async (req, res, next) => {
         //     present: false,
         // }));
 
-        // const employeeAttendanceSummary = [...presentEmployeesData, ...absentEmployeesData];
+        const employeeAttendanceSummary = [...presentEmployeesData];
 
         return res.status(StatusCodes.OK).json({
             status: StatusCodes.OK,
             success: true,
             message: `Employee attendance summary retrieved successfully`,
             data: {
-                date: currentDateIST,
-                presentEmployees,
+                date: requestedDate,
+                employeeAttendanceSummary,
             },
         });
     } catch (error) {
