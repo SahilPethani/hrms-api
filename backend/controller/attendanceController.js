@@ -148,7 +148,7 @@ const getEmployeeAttendanceSummary = async (req, res, next) => {
 
         const presentEmployees = await Attendance.find({
             date: currentDate,
-            "attendanceDetails.present": 1,
+            "attendanceDetails.type_attendance": "present",
         }).populate('attendanceDetails.employeeId', 'first_name last_name user_id designation mobile avatar');
 
         const absentEmployees = await Employee.find({
