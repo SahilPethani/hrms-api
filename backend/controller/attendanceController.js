@@ -574,6 +574,15 @@ const getEmployeeAttendanceDetails = async (req, res, next) => {
             });
         }
 
+        const employeeDetail = {
+            first_name: employee.first_name,
+            last_name: employee.last_name,
+            designation: employee.designation,
+            join_date:employee.join_date,
+            mobile:employee.mobile,
+            user_id:employee.user_id
+        }
+
         const AttendanceDetail = {
             date: currentDateIST,
             checkInTime: '00:00',
@@ -657,6 +666,7 @@ const getEmployeeAttendanceDetails = async (req, res, next) => {
             message: `Attendance details for the employee on the specified date retrieved successfully`,
             data: {
                 employeeId,
+                employeeDetail,
                 AttendanceDetail
             },
         });

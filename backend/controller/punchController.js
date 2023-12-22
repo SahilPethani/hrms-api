@@ -551,6 +551,91 @@ const addLeaveAttendance = async (employeeId, fromDate, toDate, type, one_day_le
     }
 };
 
+const addManualCheckout = async (req, res, next) => {
+    try {
+        const employeeId = req.params.id;
+        const { date, time, note } = req.body;
+
+        let employee = await Employee.findById(employeeId);
+        if (!employee) {
+            return next(new ErrorHandler(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
+        }
+
+        const currentDateIST = new Date(date + " " + time).toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+        const currentDate = new Date(currentDateIST).setSeconds(0, 0);
+
+        // Check if the employee has punched in for the specified date
+        const existingAttendance = await Attendance.findOne({
+            date: currentDate,
+            "attendanceDetails.employeeId": employee._id,
+        });
+
+        if (!existingAttendance) {
+            return res.status(StatusCodes.OK).json({
+                status: StatusCodes.OK,
+                success: false,
+                message: `Employee hasn't punched in for the specified date. Cannot add manual checkout.`,
+            });
+        }
+
+        // Check if the employee has already checked out
+        const hasCheckedOut = existingAttendance.attendanceDetails.some(
+            (detail) => detail.employeeId.equals(employee._id) && detail.punches.some((punch) => punch.type === "punchOut")
+        );
+
+        if (hasCheckedOut) {
+            return res.status(StatusCodes.OK).json({
+                status: StatusCodes.OK,
+                success: false,
+                message: `Employee has already checked out for the specified date.`,
+            });
+        }
+
+        // Add manual checkout details
+        const punchOutDetails = {
+            type: "punchOut",
+            punch_time: new Date(currentDate),
+            note: note || `Manually added checkout on ${currentDateIST}`,
+        };
+
+        // Update existing attendance document
+        const employeeAttendanceDetailsIndex = existingAttendance.attendanceDetails.findIndex(
+            (detail) => detail.employeeId.equals(employee._id)
+        );
+
+        existingAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches.push(punchOutDetails);
+        await existingAttendance.save();
+
+        // Update Employee model
+        const existingAttendanceIndex = employee.attendances.findIndex(
+            (attendance) => attendance.date.toISOString() === existingAttendance.date.toISOString()
+        );
+
+        if (existingAttendanceIndex !== -1) {
+            employee.attendances[existingAttendanceIndex].punches = existingAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches;
+        } else {
+            const attendanceData = {
+                date: existingAttendance.date,
+                present: existingAttendance.attendanceDetails[employeeAttendanceDetailsIndex].present,
+                type_attendance: existingAttendance.attendanceDetails[employeeAttendanceDetailsIndex].type_attendance,
+                punches: existingAttendance.attendanceDetails[employeeAttendanceDetailsIndex].punches,
+            };
+            employee.attendances.push(attendanceData);
+        }
+
+        await employee.save();
+
+        return res.status(StatusCodes.OK).json({
+            status: StatusCodes.OK,
+            success: true,
+            message: `Manual checkout added successfully`,
+            date: currentDateIST,
+        });
+    } catch (error) {
+        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
+    }
+};
+
 module.exports = {
     punchIn,
     punchOut,
