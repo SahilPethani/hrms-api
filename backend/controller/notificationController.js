@@ -11,7 +11,6 @@ admin.initializeApp({
 
 
 const sendNotification = async (req, res, next) => {
-
     try {
         const { user_id, title, body } = req.body;
         if (!user_id || !title) {
