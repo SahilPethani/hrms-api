@@ -93,6 +93,7 @@ const userSchema = new mongoose.Schema({
     ],
     default: 0
   },
+  fcmToken: String,
   attendances: [AttendanceSchema],
   leaves: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Leaves' }],
 });

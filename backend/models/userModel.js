@@ -24,6 +24,7 @@ const userSchema = new mongoose.Schema({
     enum: ['admin', 'employee'],
     required: true,
   },
+  fcmToken: String,
 });
 
 userSchema.pre('save', async function (next) {
