@@ -20,7 +20,7 @@ const sendNotification = async (req, res, next) => {
         const user = await User.findOne({ user_id });
 
         if (!user) {
-            return next(new ErrorHandler(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
+            return next(new ErrorHandler(`Employee not found with id ${user_id}`, StatusCodes.NOT_FOUND));
         }
 
         // Send notification using FCM token
