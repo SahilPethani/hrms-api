@@ -1,7 +1,7 @@
 const User = require("../models/userModel");
 const { StatusCodes } = require("http-status-codes");
 const { generateToken } = require("../utils/tokenGenerator");
-const ErrorHander = require("../middleware/errorhander");
+const ErrorHandler = require("../middleware/errorhander");
 const FileUplaodToFirebase = require("../middleware/multerConfig");
 const employeeModel = require("../models/employeeModel");
 
@@ -10,19 +10,19 @@ const registerUser = async (req, res, next) => {
     const { user_id, username, password, role } = req.body;
 
     if (!username || !password || !role) {
-      return next(new ErrorHander("All fields are required for registration", StatusCodes.BAD_REQUEST));
+      return next(new ErrorHandler("All fields are required for registration", StatusCodes.BAD_REQUEST));
     }
 
     const existingUser = await User.findOne({ user_id });
 
     if (existingUser) {
-      return next(new ErrorHander("User Id is already in use", StatusCodes.BAD_REQUEST));
+      return next(new ErrorHandler("User Id is already in use", StatusCodes.BAD_REQUEST));
     }
 
     const avatar = req.file;
 
     if (!avatar) {
-      return next(new ErrorHander("Avatar image is required", StatusCodes.BAD_REQUEST));
+      return next(new ErrorHandler("Avatar image is required", StatusCodes.BAD_REQUEST));
     }
 
     let certificateDownloadURL = await FileUplaodToFirebase.uploadCertifiesToFierbase(avatar);
@@ -40,7 +40,7 @@ const registerUser = async (req, res, next) => {
     });
   } catch (error) {
     console.error("Error during registration:", error);
-    return next(new ErrorHander("Registration failed", StatusCodes.INTERNAL_SERVER_ERROR));
+    return next(new ErrorHandler("Registration failed", StatusCodes.INTERNAL_SERVER_ERROR));
   }
 };
 
@@ -49,13 +49,13 @@ const registerUser = async (req, res, next) => {
 //     const { user_id, password } = req.body;
 
 //     if (!user_id || !password) {
-//       return next(new ErrorHander("All fields are required for login", StatusCodes.BAD_REQUEST));
+//       return next(new ErrorHandler("All fields are required for login", StatusCodes.BAD_REQUEST));
 //     }
 
 //     const user = await User.findOne({ user_id }).select("+password");
 
 //     if (!user) {
-//       return next(new ErrorHander("Authentication failed", StatusCodes.UNAUTHORIZED));
+//       return next(new ErrorHandler("Authentication failed", StatusCodes.UNAUTHORIZED));
 //     }
 
 //     const isPasswordValid = await user.comparePassword(password);
@@ -77,11 +77,11 @@ const registerUser = async (req, res, next) => {
 //         Token: token
 //       });
 //     } else {
-//       return next(new ErrorHander("Authentication failed", StatusCodes.UNAUTHORIZED));
+//       return next(new ErrorHandler("Authentication failed", StatusCodes.UNAUTHORIZED));
 //     }
 //   } catch (error) {
 //     console.error("Error during login:", error);
-//     return next(new ErrorHander("Authentication failed", StatusCodes.INTERNAL_SERVER_ERROR));
+//     return next(new ErrorHandler("Authentication failed", StatusCodes.INTERNAL_SERVER_ERROR));
 //   }
 // };
 
@@ -90,13 +90,13 @@ const loginUser = async (req, res, next) => {
     const { user_id, password, fcmToken } = req.body;
 
     if (!user_id || !password) {
-      return next(new ErrorHander("All fields are required for login", StatusCodes.BAD_REQUEST));
+      return next(new ErrorHandler("All fields are required for login", StatusCodes.BAD_REQUEST));
     }
 
     const user = await User.findOne({ user_id }).select("+password");
 
     if (!user) {
-      return next(new ErrorHander("Authentication failed", StatusCodes.UNAUTHORIZED));
+      return next(new ErrorHandler("Authentication failed", StatusCodes.UNAUTHORIZED));
     }
 
     const isPasswordValid = await user.comparePassword(password);
@@ -124,14 +124,48 @@ const loginUser = async (req, res, next) => {
         Token: token
       });
     } else {
-      return next(new ErrorHander("Authentication failed", StatusCodes.UNAUTHORIZED));
+      return next(new ErrorHandler("Authentication failed", StatusCodes.UNAUTHORIZED));
     }
   } catch (error) {
     console.error("Error during login:", error);
-    return next(new ErrorHander("Authentication failed", StatusCodes.INTERNAL_SERVER_ERROR));
+    return next(new ErrorHandler("Authentication failed", StatusCodes.INTERNAL_SERVER_ERROR));
   }
 };
 
+const getallUser = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page_no) || 1;
+    const perPage = parseInt(req.query.items_per_page) || 10;
+
+    const { search_text } = req.query;
+
+    const query = search_text ? { $or: [{ username: { $regex: search_text, $options: 'i' } }, { user_id: { $regex: search_text, $options: 'i' } }] } : {};
+
+    const skip = (page - 1) * perPage;
+    const users = await User.find(query)
+      .skip(skip)
+      .limit(perPage);
+    const totalUsers = await User.countDocuments(query);
+    const allUsers = await User.countDocuments()
+
+    const totalPages = Math.ceil(totalUsers / perPage);
+
+    return res.status(StatusCodes.OK).json({
+      status: StatusCodes.OK,
+      success: true,
+      data: users,
+      pagination: {
+        total_items: allUsers,
+        total_pages: totalPages,
+        current_page_item: users.length,
+        page_no: parseInt(page),
+        items_per_page: parseInt(perPage),
+      },
+    });
+  } catch (error) {
+    return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
+  }
+}
 
 const logout = async (req, res, next) => {
   return res.status(StatusCodes.OK).json({

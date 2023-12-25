@@ -18,19 +18,19 @@
 //         } = req.body;
 
 //         if (!first_name || !last_name || !email || !password) {
-//             return next(new ErrorHander("All fields are required for registration", StatusCodes.BAD_REQUEST));
+//             return next(new ErrorHandler("All fields are required for registration", StatusCodes.BAD_REQUEST));
 //         }
 
 //         const existingUser = await Employee.findOne({ email });
 
 //         if (existingUser) {
-//             return next(new ErrorHander("Email is already in use", StatusCodes.BAD_REQUEST));
+//             return next(new ErrorHandler("Email is already in use", StatusCodes.BAD_REQUEST));
 //         }
 
 //         const avatar = req.file;
 
 //         if (!avatar) {
-//             return next(new ErrorHander("Avatar image is required", StatusCodes.BAD_REQUEST));
+//             return next(new ErrorHandler("Avatar image is required", StatusCodes.BAD_REQUEST));
 //         }
 
 //         let certificateDoanloadURL = await FileUplaodToFirebase.uploadCertifiesToFierbase(avatar);
@@ -71,10 +71,10 @@
 //                 message: `Employee${create_user === 1 ? ' and User' : ''} created successfully`,
 //             });
 //         } else {
-//             return next(new ErrorHander("Employee creation failed", StatusCodes.INTERNAL_SERVER_ERROR));
+//             return next(new ErrorHandler("Employee creation failed", StatusCodes.INTERNAL_SERVER_ERROR));
 //         }
 //     } catch (error) {
-//         return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
+//         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
 //     }
 // }
 
@@ -141,7 +141,7 @@
 //             updatedEmployeeData.user_id = userId;
 
 //             if (!updatedUser) {
-//                 return next(new ErrorHander(`User not found with user_id ${userId}`, StatusCodes.NOT_FOUND));
+//                 return next(new ErrorHandler(`User not found with user_id ${userId}`, StatusCodes.NOT_FOUND));
 //             }
 //         }
 
@@ -153,7 +153,7 @@
 //         );
 
 //         if (!updatedEmployee) {
-//             return next(new ErrorHander(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
+//             return next(new ErrorHandler(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
 //         }
 
 //         return res.status(StatusCodes.OK).json({
@@ -163,7 +163,7 @@
 //             data: updatedEmployee,
 //         });
 //     } catch (error) {
-//         return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
+//         return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
 //     }
 // };
 

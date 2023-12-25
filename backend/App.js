@@ -22,6 +22,7 @@ const dashbord = require("./routes/dashbordRoute");
 const attendance = require("./routes/attendanceRoute");
 const holiday = require("./routes/holidayRoute");
 const Leave = require("./routes/leavesRoute");
+const notification = require("./routes/notificationRoute");
 
 app.use("/api/v1", user);
 app.use("/api/v1", dashbord);
@@ -29,6 +30,7 @@ app.use("/api/v1", employee);
 app.use("/api/v1", attendance);
 app.use("/api/v1", holiday);
 app.use("/api/v1", Leave);
+app.use("/api/v1", notification);
 
 app.get('/', (req, res) => {
   res.send('Hey, this is my API running 🥳');

@@ -1,6 +1,6 @@
 const Employee = require("../models/employeeModel");
 const { StatusCodes } = require("http-status-codes");
-const ErrorHander = require("../middleware/errorhander");
+const ErrorHandler = require("../middleware/errorhander");
 const User = require("../models/userModel");
 const FileUplaodToFirebase = require("../middleware/multerConfig");
 const { generateUniqueUserId } = require("../utils/helper");
@@ -24,13 +24,13 @@ const addEmployee = async (req, res, next) => {
         } = req.body;
 
         if (!first_name || !last_name) {
-            return next(new ErrorHander("First name and last name are required", StatusCodes.BAD_REQUEST));
+            return next(new ErrorHandler("First name and last name are required", StatusCodes.BAD_REQUEST));
         }
 
         const avatar = req.file;
 
         if (!avatar) {
-            return next(new ErrorHander("Avatar image is required", StatusCodes.BAD_REQUEST));
+            return next(new ErrorHandler("Avatar image is required", StatusCodes.BAD_REQUEST));
         }
 
         const certificateDownloadURL = await FileUplaodToFirebase.uploadCertifiesToFierbase(avatar);
@@ -83,10 +83,10 @@ const addEmployee = async (req, res, next) => {
                 },
             });
         } else {
-            return next(new ErrorHander("Employee creation failed", StatusCodes.INTERNAL_SERVER_ERROR));
+            return next(new ErrorHandler("Employee creation failed", StatusCodes.INTERNAL_SERVER_ERROR));
         }
     } catch (error) {
-        return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
+        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
 
@@ -121,7 +121,7 @@ const getAllEmployees = async (req, res, next) => {
             },
         });
     } catch (error) {
-        return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
+        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
 
@@ -132,7 +132,7 @@ const getEmployeeById = async (req, res, next) => {
         const employee = await Employee.findById(employeeId);
 
         if (!employee) {
-            return next(new ErrorHander(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
+            return next(new ErrorHandler(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
         }
 
         return res.status(StatusCodes.OK).json({
@@ -141,7 +141,7 @@ const getEmployeeById = async (req, res, next) => {
             data: employee,
         });
     } catch (error) {
-        return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
+        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
 
@@ -201,7 +201,7 @@ const updateEmployee = async (req, res, next) => {
         );
 
         if (!updatedEmployee) {
-            return next(new ErrorHander(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
+            return next(new ErrorHandler(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
         }
 
         return res.status(StatusCodes.OK).json({
@@ -211,7 +211,7 @@ const updateEmployee = async (req, res, next) => {
             data: updatedEmployee,
         });
     } catch (error) {
-        return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
+        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
 
@@ -222,7 +222,7 @@ const deleteEmployee = async (req, res, next) => {
         const existingEmployee = await Employee.findById(employeeId);
 
         if (!existingEmployee) {
-            return next(new ErrorHander(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
+            return next(new ErrorHandler(`Employee not found with id ${employeeId}`, StatusCodes.NOT_FOUND));
         }
 
         let deletedUser;
@@ -248,7 +248,7 @@ const deleteEmployee = async (req, res, next) => {
             },
         });
     } catch (error) {
-        return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
+        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
 

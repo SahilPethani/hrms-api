@@ -1,5 +1,5 @@
 const { StatusCodes } = require("http-status-codes");
-const ErrorHander = require("../middleware/errorhander");
+const ErrorHandler = require("../middleware/errorhander");
 
 const Holiday = require("../models/holidayModel");
 const { addPunchForHoliday } = require("./punchController");
@@ -10,21 +10,21 @@ const addHoliday = async (req, res, next) => {
     try {
         const { holiday_no, holiday_name, holiday_date, detail, status } = req.body;
         if (!holiday_no || !holiday_name || !holiday_date) {
-            return next(new ErrorHander("Holiday number, name, and date are required", StatusCodes.BAD_REQUEST));
+            return next(new ErrorHandler("Holiday number, name, and date are required", StatusCodes.BAD_REQUEST));
         }
         const today = new Date();
         const selectedDate = new Date(holiday_date);
         if (selectedDate <= today) {
-            return next(new ErrorHander("Invalid date. Holidays must be set for future dates only.", StatusCodes.BAD_REQUEST));
+            return next(new ErrorHandler("Invalid date. Holidays must be set for future dates only.", StatusCodes.BAD_REQUEST));
         }
         const isSunday = selectedDate.getDay() === 0;
         if (isSunday) {
-            return next(new ErrorHander("Holidays cannot be added on Sundays", StatusCodes.BAD_REQUEST));
+            return next(new ErrorHandler("Holidays cannot be added on Sundays", StatusCodes.BAD_REQUEST));
         }
         const formattedHolidayDate = selectedDate.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
         const existingHoliday = await Holiday.findOne({ holiday_date: formattedHolidayDate });
         if (existingHoliday) {
-            return next(new ErrorHander("A holiday already exists for the specified date", StatusCodes.BAD_REQUEST));
+            return next(new ErrorHandler("A holiday already exists for the specified date", StatusCodes.BAD_REQUEST));
         }
         const holiday = new Holiday({
             holiday_no,
@@ -42,7 +42,7 @@ const addHoliday = async (req, res, next) => {
             data: savedHoliday,
         });
     } catch (error) {
-        return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
+        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
 
@@ -81,7 +81,7 @@ const getAllHolidays = async (req, res, next) => {
             },
         });
     } catch (error) {
-        return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
+        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
 
@@ -125,7 +125,7 @@ const getAllHolidaysEmployee = async (req, res, next) => {
             },
         });
     } catch (error) {
-        return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
+        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
 
@@ -135,7 +135,7 @@ const getHolidayById = async (req, res, next) => {
         const holiday = await Holiday.findById(holidayId);
 
         if (!holiday) {
-            return next(new ErrorHander(`Holiday not found with id ${holidayId}`, StatusCodes.NOT_FOUND));
+            return next(new ErrorHandler(`Holiday not found with id ${holidayId}`, StatusCodes.NOT_FOUND));
         }
 
         return res.status(StatusCodes.OK).json({
@@ -144,7 +144,7 @@ const getHolidayById = async (req, res, next) => {
             data: holiday,
         });
     } catch (error) {
-        return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
+        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
 
@@ -164,19 +164,19 @@ const updateHoliday = async (req, res, next) => {
         const existingHoliday = await Holiday.findById(holidayId);
 
         if (!existingHoliday) {
-            return next(new ErrorHander(`Holiday not found with id ${holidayId}`, StatusCodes.NOT_FOUND));
+            return next(new ErrorHandler(`Holiday not found with id ${holidayId}`, StatusCodes.NOT_FOUND));
         }
 
         const isSunday = new Date(holiday_date).getDay() === 0;
         if (isSunday) {
-            return next(new ErrorHander("Holidays cannot be updated on Sundays", StatusCodes.BAD_REQUEST));
+            return next(new ErrorHandler("Holidays cannot be updated on Sundays", StatusCodes.BAD_REQUEST));
         }
 
         const today = new Date();
         const selectedDate = new Date(holiday_date);
 
         if (selectedDate <= today) {
-            return next(new ErrorHander("Invalid date. Holidays must be set for future dates only.", StatusCodes.BAD_REQUEST));
+            return next(new ErrorHandler("Invalid date. Holidays must be set for future dates only.", StatusCodes.BAD_REQUEST));
         }
 
         const updatedHoliday = await Holiday.findByIdAndUpdate(
@@ -192,7 +192,7 @@ const updateHoliday = async (req, res, next) => {
             data: updatedHoliday,
         });
     } catch (error) {
-        return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
+        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
 
@@ -203,7 +203,7 @@ const deleteHoliday = async (req, res, next) => {
         const existingHoliday = await Holiday.findById(holidayId);
 
         if (!existingHoliday) {
-            return next(new ErrorHander(`Holiday not found with id ${holidayId}`, StatusCodes.NOT_FOUND));
+            return next(new ErrorHandler(`Holiday not found with id ${holidayId}`, StatusCodes.NOT_FOUND));
         }
 
         const holidayDate = new Date(existingHoliday.holiday_date);
@@ -234,7 +234,7 @@ const deleteHoliday = async (req, res, next) => {
             data: deletedHoliday,
         });
     } catch (error) {
-        return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
+        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
 
@@ -259,7 +259,7 @@ const getCurrentMonthHolidays = async (req, res, next) => {
             data: currentMonthHolidays,
         });
     } catch (error) {
-        return next(new ErrorHander(error, StatusCodes.INTERNAL_SERVER_ERROR));
+        return next(new ErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
 
