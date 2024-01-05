@@ -790,6 +790,8 @@ const getEmployeeAttendanceList = async (req, res, next) => {
         });
 
         const paginatedAttendanceList = monthlyAttendanceDetails.slice(skip, skip + perPage);
+        const totalEmployees = await Employee.countDocuments();
+        const totalPages = Math.ceil(totalEmployees / perPage);
 
         return res.status(StatusCodes.OK).json({
             status: StatusCodes.OK,
@@ -799,6 +801,8 @@ const getEmployeeAttendanceList = async (req, res, next) => {
                 employeeId,
                 attendanceList: paginatedAttendanceList,
                 pagination: {
+                    total_items: totalEmployees,
+                    total_pages: totalPages,
                     current_page_item: paginatedAttendanceList.length,
                     page_no: parseInt(page),
                     items_per_page: parseInt(perPage),

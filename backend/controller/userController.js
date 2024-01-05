@@ -44,47 +44,6 @@ const registerUser = async (req, res, next) => {
   }
 };
 
-// const loginUser = async (req, res, next) => {
-//   try {
-//     const { user_id, password } = req.body;
-
-//     if (!user_id || !password) {
-//       return next(new ErrorHandler("All fields are required for login", StatusCodes.BAD_REQUEST));
-//     }
-
-//     const user = await User.findOne({ user_id }).select("+password");
-
-//     if (!user) {
-//       return next(new ErrorHandler("Authentication failed", StatusCodes.UNAUTHORIZED));
-//     }
-
-//     const isPasswordValid = await user.comparePassword(password);
-//     const employeeData = await employeeModel.findOne(
-//       { user_id: user_id },
-//       { _id: 1, user_id: 1, first_name: 1, last_name: 1, designation: 1, /* Add other fields you want to include */ }
-//     );
-
-//     if (isPasswordValid) {
-//       const userWithoutPassword = { ...user.toObject() };
-//       delete userWithoutPassword.password;
-
-//       const token = generateToken(user);
-//       return res.status(StatusCodes.OK).json({
-//         status: StatusCodes.OK,
-//         message: `${user.role} logged in successfully`,
-//         user: userWithoutPassword,
-//         employeeData: employeeData ? employeeData : "",
-//         Token: token
-//       });
-//     } else {
-//       return next(new ErrorHandler("Authentication failed", StatusCodes.UNAUTHORIZED));
-//     }
-//   } catch (error) {
-//     console.error("Error during login:", error);
-//     return next(new ErrorHandler("Authentication failed", StatusCodes.INTERNAL_SERVER_ERROR));
-//   }
-// };
-
 const loginUser = async (req, res, next) => {
   try {
     const { user_id, password, fcmToken } = req.body;
