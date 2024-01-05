@@ -403,8 +403,10 @@ const getTodayAttendance = async (req, res, next) => {
 
             todayAttendance.push(employeeAttendance);
         }
+
         const totalEmployees = await Employee.countDocuments();
         const totalPages = Math.ceil(totalEmployees / perPage);
+
         const pagination = {
             total_items: totalEmployees,
             total_pages: totalPages,
@@ -790,8 +792,7 @@ const getEmployeeAttendanceList = async (req, res, next) => {
         });
 
         const paginatedAttendanceList = monthlyAttendanceDetails.slice(skip, skip + perPage);
-        const totalEmployees = await Employee.countDocuments();
-        const totalPages = Math.ceil(totalEmployees / perPage);
+        const totalPages = Math.ceil(monthlyAttendanceDetails.length / perPage);
 
         return res.status(StatusCodes.OK).json({
             status: StatusCodes.OK,
@@ -801,7 +802,7 @@ const getEmployeeAttendanceList = async (req, res, next) => {
                 employeeId,
                 attendanceList: paginatedAttendanceList,
                 pagination: {
-                    total_items: totalEmployees,
+                    total_items: monthlyAttendanceDetails.length,
                     total_pages: totalPages,
                     current_page_item: paginatedAttendanceList.length,
                     page_no: parseInt(page),

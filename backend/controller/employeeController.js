@@ -105,7 +105,6 @@ const getAllEmployees = async (req, res, next) => {
             .limit(perPage);
         const totalEmployees = await Employee.countDocuments(query);
         const allEmployees = await Employee.countDocuments()
-
         const totalPages = Math.ceil(totalEmployees / perPage);
 
         return res.status(StatusCodes.OK).json({
